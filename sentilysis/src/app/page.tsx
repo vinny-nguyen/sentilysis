@@ -12,11 +12,22 @@ import {
   Legend,
 } from "chart.js";
 
+interface StockData {
+  symbol: string;
+  shortName: string;
+  currentPrice: string;
+  currency: string;
+  previousClose: number;
+  open: number;
+  dayHigh: number;
+  dayLow: number;
+}
+
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 export default function Home() {
   const [ticker, setTicker] = useState("");
-  const [stockData, setStockData] = useState<any>(null);
+  const [stockData, setStockData] = useState<StockData | null >(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [chatInput, setChatInput] = useState("");
@@ -88,7 +99,7 @@ export default function Home() {
       } else {
         setError(data.error || "Failed to fetch stock data");
       }
-    } catch (err) {
+    } catch {
       setError("Failed to fetch stock data");
     } finally {
       setLoading(false);
