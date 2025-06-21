@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -11,11 +12,22 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+# Get CORS origins from environment
+def get_cors_origins():
+    if os.getenv("ENVIRONMENT") == "production":
+        # Production: specific domains only
+        origins = "https://sentilysis.vercel.app/"
+    else:
+        # Development: allow common dev ports
+        origins = "http://localhost:3000/"
+    return [origin.strip() for origin in origins.split(",") if origin.strip()]
+
+
 # Create FastAPI app
 app = FastAPI(
     title="Sentilytics API",
     version="1.0.0",
-    description="A basic API for Sentilytics",
+    description="A basic API for Sentilytics with AI capabilities",
     docs_url="/docs",
     redoc_url="/redoc",
 )
@@ -47,6 +59,12 @@ async def global_exception_handler(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
 
+# Include routers
+from .api.routes import ai
+
+app.include_router(ai.router)
+
+
 # Root endpoint
 @app.get("/")
 async def root():
@@ -56,6 +74,7 @@ async def root():
         "version": "1.0.0",
         "status": "running",
         "docs": "/docs",
+        "ai_endpoints": "/ai",
     }
 
 
