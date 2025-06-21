@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="Sentilytics API",
     version="1.0.0",
-    description="A basic API for Sentilytics",
+    description="A basic API for Sentilytics with AI capabilities",
     docs_url="/docs",
     redoc_url="/redoc",
 )
@@ -47,6 +47,12 @@ async def global_exception_handler(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
 
+# Include routers
+from .api.routes import ai
+
+app.include_router(ai.router)
+
+
 # Root endpoint
 @app.get("/")
 async def root():
@@ -56,6 +62,7 @@ async def root():
         "version": "1.0.0",
         "status": "running",
         "docs": "/docs",
+        "ai_endpoints": "/ai",
     }
 
 
