@@ -35,11 +35,11 @@ export default function Home() {
   };
   const sentimentSummary =
     "Recent sentiment trends suggest a generally positive outlook for TSLA. Concerns linger around AAPL’s supply chain and global market uncertainty.";
-  const macroLinks = [
-    { text: "AAPL faces supply chain issues in China, causes investors to worry.", url: "#" },
-    { text: "Fed signals possible rate hike pause, impacting tech stock sentiment.", url: "#" },
-    { text: "Ongoing US-China tensions are affecting global supply chains.", url: "#" },
-  ];
+  // const macroLinks = [
+  //   { text: "AAPL faces supply chain issues in China, causes investors to worry.", url: "#" },
+  //   { text: "Fed signals possible rate hike pause, impacting tech stock sentiment.", url: "#" },
+  //   { text: "Ongoing US-China tensions are affecting global supply chains.", url: "#" },
+  // ];
   const chartData = {
     labels: ["Mon", "Tue", "Wed", "Thu", "Fri"],
     datasets: [
@@ -185,10 +185,10 @@ export default function Home() {
   
   <div className="space-y-3 text-sm text-gray-800 dark:text-gray-300 leading-relaxed">
     <p>
-      📦 <strong>AAPL's supply chain issues</strong> in China could disrupt product deliveries and revenue forecasts. This creates uncertainty, which may lead to investor hesitation and short-term dips in stock price.
+      📦 <strong>AAPL&apos;s supply chain issues</strong> in China could disrupt product deliveries and revenue forecasts. This creates uncertainty, which may lead to investor hesitation and short-term dips in stock price.
     </p>
     <p>
-      🏦 The <strong>Federal Reserve's potential pause on rate hikes</strong> could signal economic stability. This might boost tech stocks like TSLA and AAPL as lower interest rates improve borrowing conditions and investor sentiment.
+      🏦 The <strong>Federal Reserve&apos;s potential pause on rate hikes</strong> could signal economic stability. This might boost tech stocks like TSLA and AAPL as lower interest rates improve borrowing conditions and investor sentiment.
     </p>
     <p>
       🌏 <strong>Ongoing US-China tensions</strong> are straining global logistics networks. Companies relying on overseas manufacturing — like AAPL — may face cost increases, delayed launches, and risk of negative media coverage affecting stock valuation.
