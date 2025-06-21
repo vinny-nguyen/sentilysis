@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -9,6 +10,17 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
+
+
+# Get CORS origins from environment
+def get_cors_origins():
+    if os.getenv("ENVIRONMENT") == "production":
+        # Production: specific domains only
+        origins = "https://sentilysis.vercel.app/"
+    else:
+        # Development: allow common dev ports
+        origins = "http://localhost:3000/"
+    return [origin.strip() for origin in origins.split(",") if origin.strip()]
 
 
 # Create FastAPI app
