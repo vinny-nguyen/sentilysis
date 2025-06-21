@@ -1,103 +1,223 @@
-import Image from "next/image";
+"use client";
+import { useState } from "react";
+import { Line } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [ticker, setTicker] = useState("");
+  const [chatInput, setChatInput] = useState("");
+  const [chatHistory, setChatHistory] = useState([
+    { sender: "bot", text: "Hi! Ask me about any stock or market event." },
+  ]);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const sentiment = { positive: 60, neutral: 25, negative: 15 };
+  const headlines = {
+    positive: [
+      "TSLA surges after earnings beat expectations.",
+      "AAPL announces innovative new product line.",
+    ],
+    neutral: ["Fed signals possible rate hike pause."],
+    negative: [
+      "$AAPL faces supply chain issues in China.",
+      "Market volatility increases amid global tensions.",
+    ],
+  };
+  const sentimentSummary =
+    "Recent sentiment trends suggest a generally positive outlook for TSLA. Concerns linger around AAPL’s supply chain and global market uncertainty.";
+  // const macroLinks = [
+  //   { text: "AAPL faces supply chain issues in China, causes investors to worry.", url: "#" },
+  //   { text: "Fed signals possible rate hike pause, impacting tech stock sentiment.", url: "#" },
+  //   { text: "Ongoing US-China tensions are affecting global supply chains.", url: "#" },
+  // ];
+  const chartData = {
+    labels: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+    datasets: [
+      {
+        label: "Stock Price ($)",
+        data: [180, 185, 182, 188, 192],
+        borderColor: "#2563eb",
+        backgroundColor: "#2563eb33",
+        tension: 0.4,
+      },
+    ],
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    alert(`Searching for ${ticker}... (mock)`);
+  };
+
+  const handleChat = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatInput.trim()) return;
+    setChatHistory((prev) => [
+      ...prev,
+      { sender: "user", text: chatInput },
+      { sender: "bot", text: "(Mock) Here's a smart answer about: " + chatInput },
+    ]);
+    setChatInput("");
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 px-4 py-6 flex flex-col items-center">
+      {/* Search Bar */}
+      <form
+        onSubmit={handleSearch}
+        className="w-full max-w-3xl flex items-center gap-3 mb-6"
+      >
+        <input
+          type="text"
+          placeholder="Enter stock ticker (e.g., TSLA, AAPL)"
+          value={ticker}
+          onChange={(e) => setTicker(e.target.value.toUpperCase())}
+          className="flex-1 px-4 py-2 rounded-lg border border-gray-300 bg-white dark:bg-gray-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <button
+          type="submit"
+          className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition shadow-sm"
+        >
+          Search
+        </button>
+      </form>
+
+      {/* Dashboard */}
+      <div className="w-full max-w-7xl grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Sentiment Analysis */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow p-5 flex flex-col gap-3">
+          <h2 className="text-xl font-bold">📊 Sentiment Analysis</h2>
+          <div className="flex justify-around">
+            <Stat label="Positive" value={sentiment.positive} color="green" />
+            <Stat label="Neutral" value={sentiment.neutral} color="gray" />
+            <Stat label="Negative" value={sentiment.negative} color="red" />
+          </div>
+          <p className="text-sm text-gray-700 dark:text-gray-300">{sentimentSummary}</p>
+          <div className="text-sm space-y-2">
+            {["positive", "neutral", "negative"].map((category) => (
+              <div key={category}>
+                <h3
+                  className={`font-semibold ${
+                    category === "positive"
+                      ? "text-green-600 dark:text-green-400"
+                      : category === "neutral"
+                      ? "text-gray-600 dark:text-gray-300"
+                      : "text-red-600 dark:text-red-400"
+                  }`}
+                >
+                  {category.charAt(0).toUpperCase() + category.slice(1)}
+                </h3>
+                <ul className="list-disc ml-5">
+                  {headlines[category as keyof typeof headlines].map((h, i) => (
+                    <li key={i} className="text-gray-800 dark:text-gray-200">{h}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        {/* Stock Chart */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow p-5 flex flex-col items-center">
+          <h2 className="text-lg font-semibold mb-3">📈 Stock Chart</h2>
+          <div className="w-full h-56">
+            <Line
+              data={chartData}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Chatbot Assistant */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow p-5 flex flex-col">
+          <h2 className="text-lg font-semibold mb-3">🤖 Chatbot Assistant</h2>
+          <div className="flex-1 overflow-y-auto mb-3 border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-gray-50 dark:bg-gray-900/40 space-y-2 text-sm">
+            {chatHistory.map((msg, i) => (
+              <div
+                key={i}
+                className={`${
+                  msg.sender === "bot"
+                    ? "text-blue-700 dark:text-blue-300"
+                    : "text-right text-gray-800 dark:text-white"
+                }`}
+              >
+                <div className="text-xs font-medium">
+                  {msg.sender === "bot" ? "Assistant" : "You"}
+                </div>
+                <div>{msg.text}</div>
+              </div>
+            ))}
+          </div>
+          <form onSubmit={handleChat} className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Ask a follow-up..."
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              className="flex-1 px-4 py-2 rounded-full border border-gray-300 bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+            <button
+              type="submit"
+              className="bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 font-semibold transition"
+            >
+              Send
+            </button>
+          </form>
+        </div>
+      </div>
+
+      {/* Macro Events */}
+      <div className="w-full max-w-7xl bg-white dark:bg-gray-800 rounded-2xl shadow p-6 mt-6 space-y-4">
+  <h2 className="text-lg font-semibold tracking-tight">🌐 Connecting Global Events to Stock Sentiment</h2>
+  
+  <div className="space-y-3 text-sm text-gray-800 dark:text-gray-300 leading-relaxed">
+    <p>
+      📦 <strong>AAPL&apos;s supply chain issues</strong> in China could disrupt product deliveries and revenue forecasts. This creates uncertainty, which may lead to investor hesitation and short-term dips in stock price.
+    </p>
+    <p>
+      🏦 The <strong>Federal Reserve&apos;s potential pause on rate hikes</strong> could signal economic stability. This might boost tech stocks like TSLA and AAPL as lower interest rates improve borrowing conditions and investor sentiment.
+    </p>
+    <p>
+      🌏 <strong>Ongoing US-China tensions</strong> are straining global logistics networks. Companies relying on overseas manufacturing — like AAPL — may face cost increases, delayed launches, and risk of negative media coverage affecting stock valuation.
+    </p>
+  </div>
+
+  <div className="mt-4">
+    <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-2">🔗 References</h3>
+    <ul className="list-disc ml-5 space-y-1 text-sm text-blue-700 dark:text-blue-400">
+      <li><a href="#" target="_blank" rel="noopener noreferrer">AAPL Supply Chain Report – Source</a></li>
+      <li><a href="#" target="_blank" rel="noopener noreferrer">Federal Reserve Interest Rate News – Source</a></li>
+      <li><a href="#" target="_blank" rel="noopener noreferrer">US-China Trade Tensions Coverage – Source</a></li>
+    </ul>
+  </div>
+  </div>
+  </div>
+  );
+}
+
+function Stat({ label, value, color }: { label: string; value: number; color: string }) {
+  const colorMap: Record<string, string> = {
+    green: "text-green-500",
+    gray: "text-gray-400",
+    red: "text-red-500",
+  };
+  return (
+    <div className="flex flex-col items-center">
+      <span className={`text-xl font-bold ${colorMap[color]}`}>{value}%</span>
+      <span className="text-xs text-gray-500">{label}</span>
     </div>
   );
 }
