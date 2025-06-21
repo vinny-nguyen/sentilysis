@@ -13,24 +13,14 @@ class TextGenerationRequest(BaseModel):
 
 class TextAnalysisRequest(BaseModel):
     text: str
-    analysis_type: str = "general"  # general, summary, sentiment
-
-
-class ChatRequest(BaseModel):
-    message: str
-    context: str = "general"
-
-
-class InsightsRequest(BaseModel):
-    topic: str
-    insights_type: str = "general"  # general, financial, technical
+    max_tokens: int = 1000
 
 
 @router.post("/generate", response_model=Dict[str, Any])
 async def generate_text(request: TextGenerationRequest):
     """Generate text using Gemini AI"""
     try:
-        result = await gemini_service.generate_text(request.prompt, request.max_tokens)
+        result = await gemini_service.summarize_text(request.prompt, request.max_tokens)
         return {"generated_text": result, "prompt": request.prompt, "status": "success"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating text: {str(e)}")
@@ -40,7 +30,7 @@ async def generate_text(request: TextGenerationRequest):
 async def analyze_text(request: TextAnalysisRequest):
     """Analyze text using Gemini AI"""
     try:
-        result = await gemini_service.analyze_text(request.text, request.analysis_type)
+        result = await gemini_service.analyze_text(request.text, request.max_tokens)
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error analyzing text: {str(e)}")

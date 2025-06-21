@@ -22,21 +22,19 @@ class GeminiService:
             self.client = genai.GenerativeModel(gemini_model)
             logger.info("Gemini service initialized successfully")
 
-    async def generate_text(self, prompt: str, max_tokens: int = 1000) -> str:
+    async def summarize_text(self, prompt: str, max_tokens: int = 200) -> str:
         """Generate text using Gemini AI"""
         try:
             if not self.client:
                 return "Gemini API key not configured"
 
-            response = self.client.generate_content(prompt)
+            response = self.client.generate_content(prompt, max_tokens=max_tokens)
             return response.text
         except Exception as e:
             logger.error(f"Error generating text with Gemini: {e}")
             return f"Error: {str(e)}"
 
-    async def analyze_text(
-        self, text: str, analysis_type: str = "general"
-    ) -> Dict[str, Any]:
+    async def analyze_text(self, text: str, max_tokens: int = 200) -> Dict[str, Any]:
         """Analyze text using Gemini AI"""
         try:
             if not self.client:
@@ -49,12 +47,11 @@ class GeminiService:
 
             return {
                 "analysis": response.text,
-                "type": analysis_type,
                 "status": "success",
             }
         except Exception as e:
             logger.error(f"Error analyzing text with Gemini: {e}")
-            return {"error": str(e), "type": analysis_type, "status": "error"}
+            return {"error": str(e), "status": "error"}
 
     def is_configured(self) -> bool:
         """Check if Gemini service is properly configured"""
