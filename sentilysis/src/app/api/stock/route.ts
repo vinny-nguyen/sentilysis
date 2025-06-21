@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
       dayHigh: quote.regularMarketDayHigh,
       dayLow: quote.regularMarketDayLow,
     });
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: "Failed to fetch stock data" }, { status: 500 });
   }
 } 
