@@ -25,7 +25,7 @@ export default function Home() {
   ]);
 
   const sentiment = { positive: 60, neutral: 25, negative: 15 };
-  const headlines = {
+  const headlines = { 
     positive: [
       "TSLA surges after earnings beat expectations.",
       "AAPL announces innovative new product line.",
