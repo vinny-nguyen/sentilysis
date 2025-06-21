@@ -1,1 +1,0 @@
-# Sentilytics Backend Application

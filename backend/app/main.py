@@ -3,11 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import logging
 import time
-from contextlib import asynccontextmanager
-
-from .config import settings
-from .database import connect_to_mongo, close_mongo_connection
-from .api.routes import sentiment
 
 # Configure logging
 logging.basicConfig(
@@ -16,40 +11,19 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Manage application lifespan events"""
-    # Startup
-    logger.info("Starting Sentilytics Backend...")
-    try:
-        await connect_to_mongo()
-        logger.info("Successfully connected to MongoDB")
-    except Exception as e:
-        logger.error(f"Failed to connect to MongoDB: {e}")
-        raise e
-
-    yield
-
-    # Shutdown
-    logger.info("Shutting down Sentilytics Backend...")
-    await close_mongo_connection()
-    logger.info("MongoDB connection closed")
-
-
 # Create FastAPI app
 app = FastAPI(
-    title=settings.app_name,
-    version=settings.app_version,
-    description="Real-time stock sentiment analysis using AI and social media data",
+    title="Sentilytics API",
+    version="1.0.0",
+    description="A basic API for Sentilytics",
     docs_url="/docs",
     redoc_url="/redoc",
-    lifespan=lifespan,
 )
 
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.allowed_origins,
+    allow_origins=["*"],  # Allow all origins for development
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -73,20 +47,15 @@ async def global_exception_handler(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
 
-# Include routers
-app.include_router(sentiment.router)
-
-
 # Root endpoint
 @app.get("/")
 async def root():
     """Root endpoint with basic API information"""
     return {
-        "message": f"Welcome to {settings.app_name} API",
-        "version": settings.app_version,
+        "message": "Welcome to Sentilytics API",
+        "version": "1.0.0",
         "status": "running",
         "docs": "/docs",
-        "health": "/sentiment/health",
     }
 
 
@@ -96,9 +65,18 @@ async def health_check():
     """Global health check endpoint"""
     return {
         "status": "healthy",
-        "service": settings.app_name,
-        "version": settings.app_version,
-        "environment": settings.environment,
+        "service": "Sentilytics API",
+        "version": "1.0.0",
+    }
+
+
+# Example endpoint
+@app.get("/api/example")
+async def example_endpoint():
+    """Example endpoint for testing"""
+    return {
+        "message": "This is an example endpoint",
+        "data": {"items": ["item1", "item2", "item3"], "count": 3},
     }
 
 
@@ -109,6 +87,6 @@ if __name__ == "__main__":
         "app.main:app",
         host="0.0.0.0",
         port=8000,
-        reload=settings.debug,
+        reload=True,
         log_level="info",
     )
