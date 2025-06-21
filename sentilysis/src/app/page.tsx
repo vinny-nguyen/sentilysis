@@ -16,6 +16,9 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 
 export default function Home() {
   const [ticker, setTicker] = useState("");
+  const [stockData, setStockData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [chatInput, setChatInput] = useState("");
   const [chatHistory, setChatHistory] = useState([
     { sender: "bot", text: "Hi! Ask me about any stock or market event." },
@@ -34,28 +37,62 @@ export default function Home() {
     ],
   };
   const sentimentSummary =
-    "Recent sentiment trends suggest a generally positive outlook for TSLA. Concerns linger around AAPL’s supply chain and global market uncertainty.";
+    "Recent sentiment trends suggest a generally positive outlook for TSLA. Concerns linger around AAPL's supply chain and global market uncertainty.";
   // const macroLinks = [
   //   { text: "AAPL faces supply chain issues in China, causes investors to worry.", url: "#" },
   //   { text: "Fed signals possible rate hike pause, impacting tech stock sentiment.", url: "#" },
   //   { text: "Ongoing US-China tensions are affecting global supply chains.", url: "#" },
   // ];
-  const chartData = {
-    labels: ["Mon", "Tue", "Wed", "Thu", "Fri"],
-    datasets: [
-      {
-        label: "Stock Price ($)",
-        data: [180, 185, 182, 188, 192],
-        borderColor: "#2563eb",
-        backgroundColor: "#2563eb33",
-        tension: 0.4,
-      },
-    ],
-  };
+  const chartData = stockData
+    ? {
+        labels: ["Current", "Open", "High", "Low", "Prev Close"],
+        datasets: [
+          {
+            label: `Stock Price (${stockData.currency || "$"})`,
+            data: [
+              stockData.currentPrice,
+              stockData.open,
+              stockData.dayHigh,
+              stockData.dayLow,
+              stockData.previousClose,
+            ],
+            borderColor: "#2563eb",
+            backgroundColor: "#2563eb33",
+            tension: 0.4,
+          },
+        ],
+      }
+    : {
+        labels: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+        datasets: [
+          {
+            label: "Stock Price ($)",
+            data: [180, 185, 182, 188, 192],
+            borderColor: "#2563eb",
+            backgroundColor: "#2563eb33",
+            tension: 0.4,
+          },
+        ],
+      };
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert(`Searching for ${ticker}... (mock)`);
+    setLoading(true);
+    setError("");
+    setStockData(null);
+    try {
+      const res = await fetch(`/api/stock?ticker=${ticker}`);
+      const data = await res.json();
+      if (res.ok) {
+        setStockData(data);
+      } else {
+        setError(data.error || "Failed to fetch stock data");
+      }
+    } catch (err) {
+      setError("Failed to fetch stock data");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleChat = (e: React.FormEvent) => {
@@ -127,18 +164,42 @@ export default function Home() {
         </div>
 
         {/* Stock Chart */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow p-5 flex flex-col items-center">
-          <h2 className="text-lg font-semibold mb-3">📈 Stock Chart</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow p-5 flex flex-col">
+          <h2 className="text-lg font-semibold mb-3 self-center">📈 Stock Chart</h2>
           <div className="w-full h-56">
-            <Line
-              data={chartData}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-              }}
-            />
+            {loading ? (
+              <div className="flex items-center justify-center h-full">Loading...</div>
+            ) : error ? (
+              <div className="flex items-center justify-center h-full text-red-500 text-center">
+                {error}
+              </div>
+            ) : (
+              <Line
+                data={chartData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: { legend: { display: false } },
+                }}
+              />
+            )}
           </div>
+          {!loading && !error && stockData && (
+            <div className="mt-4 text-sm text-gray-700 dark:text-gray-200 w-full">
+              <div>
+                <strong>
+                  {stockData.shortName} ({stockData.symbol})
+                </strong>
+              </div>
+              <div>
+                Current Price: {stockData.currentPrice} {stockData.currency}
+              </div>
+              <div>Open: {stockData.open}</div>
+              <div>High: {stockData.dayHigh}</div>
+              <div>Low: {stockData.dayLow}</div>
+              <div>Previous Close: {stockData.previousClose}</div>
+            </div>
+          )}
         </div>
 
         {/* Chatbot Assistant */}
