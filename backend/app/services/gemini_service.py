@@ -6,15 +6,16 @@ from ..models.sentiment import SentimentType, SentimentAnalysis, ChatResponse
 
 logger = logging.getLogger(__name__)
 
+
 class GeminiService:
     def __init__(self):
         """Initialize Gemini API service"""
         if not settings.gemini_api_key:
             raise ValueError("GEMINI_API_KEY is required")
-        
+
         genai.configure(api_key=settings.gemini_api_key)
-        self.model = genai.GenerativeModel('gemini-pro')
-        
+        self.model = genai.GenerativeModel("gemini-pro")
+
     async def analyze_sentiment(self, content: str, ticker: str) -> SentimentAnalysis:
         """Analyze sentiment of a single post"""
         try:
@@ -41,10 +42,10 @@ class GeminiService:
                 "macroeconomic_factors": ["factor1", "factor2"]
             }}
             """
-            
+
             response = await self.model.generate_content_async(prompt)
             result = self._parse_sentiment_response(response.text)
-            
+
             return SentimentAnalysis(
                 post_id="",  # Will be set by caller
                 ticker=ticker,
@@ -53,9 +54,9 @@ class GeminiService:
                 summary=result["summary"],
                 key_points=result["key_points"],
                 geopolitical_events=result["geopolitical_events"],
-                macroeconomic_factors=result["macroeconomic_factors"]
+                macroeconomic_factors=result["macroeconomic_factors"],
             )
-            
+
         except Exception as e:
             logger.error(f"Error analyzing sentiment: {e}")
             # Return neutral sentiment as fallback
@@ -67,18 +68,22 @@ class GeminiService:
                 summary="Unable to analyze sentiment due to an error.",
                 key_points=[],
                 geopolitical_events=[],
-                macroeconomic_factors=[]
+                macroeconomic_factors=[],
             )
-    
-    async def generate_summary(self, posts: List[Dict[str, Any]], ticker: str) -> Dict[str, Any]:
+
+    async def generate_summary(
+        self, posts: List[Dict[str, Any]], ticker: str
+    ) -> Dict[str, Any]:
         """Generate overall summary from multiple posts"""
         try:
             # Prepare content for analysis
-            content_summary = "\n\n".join([
-                f"Source: {post.get('source', 'unknown')}\nContent: {post.get('content', '')[:500]}..."
-                for post in posts[:20]  # Limit to first 20 posts
-            ])
-            
+            content_summary = "\n\n".join(
+                [
+                    f"Source: {post.get('source', 'unknown')}\nContent: {post.get('content', '')[:500]}..."
+                    for post in posts[:20]  # Limit to first 20 posts
+                ]
+            )
+
             prompt = f"""
             Analyze the following social media posts and news articles about stock ticker {ticker}.
             
@@ -101,10 +106,10 @@ class GeminiService:
                 "investor_insights": "Key insights for investors"
             }}
             """
-            
+
             response = await self.model.generate_content_async(prompt)
             return self._parse_summary_response(response.text)
-            
+
         except Exception as e:
             logger.error(f"Error generating summary: {e}")
             return {
@@ -112,10 +117,12 @@ class GeminiService:
                 "top_headlines": [],
                 "geopolitical_summary": "Unable to generate summary due to an error.",
                 "macro_summary": "Unable to generate summary due to an error.",
-                "investor_insights": "Unable to generate insights due to an error."
+                "investor_insights": "Unable to generate insights due to an error.",
             }
-    
-    async def chat_response(self, message: str, ticker: str, context_data: Optional[Dict[str, Any]] = None) -> ChatResponse:
+
+    async def chat_response(
+        self, message: str, ticker: str, context_data: Optional[Dict[str, Any]] = None
+    ) -> ChatResponse:
         """Generate chatbot response with context"""
         try:
             context = ""
@@ -126,7 +133,7 @@ class GeminiService:
                 - Recent headlines: {', '.join(context_data.get('headlines', [])[:3])}
                 - Geopolitical events: {context_data.get('geopolitical_events', 'none')}
                 """
-            
+
             prompt = f"""
             You are a helpful AI assistant specializing in stock market analysis and sentiment.
             
@@ -139,81 +146,86 @@ class GeminiService:
             
             Keep your response concise but informative (2-4 sentences).
             """
-            
+
             response = await self.model.generate_content_async(prompt)
-            
+
             return ChatResponse(
                 response=response.text.strip(),
                 sources=["AI Analysis"],
                 confidence=0.8,
-                timestamp=None  # Will be set automatically
+                timestamp=None,  # Will be set automatically
             )
-            
+
         except Exception as e:
             logger.error(f"Error generating chat response: {e}")
             return ChatResponse(
                 response="I apologize, but I'm unable to process your request at the moment. Please try again later.",
                 sources=[],
                 confidence=0.0,
-                timestamp=None
+                timestamp=None,
             )
-    
+
     def _parse_sentiment_response(self, response_text: str) -> Dict[str, Any]:
         """Parse sentiment analysis response from Gemini"""
         try:
             # Extract JSON from response
             import json
             import re
-            
+
             # Find JSON in the response
-            json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+            json_match = re.search(r"\{.*\}", response_text, re.DOTALL)
             if json_match:
                 return json.loads(json_match.group())
             else:
                 # Fallback parsing
                 return self._fallback_sentiment_parsing(response_text)
-                
+
         except Exception as e:
             logger.error(f"Error parsing sentiment response: {e}")
             return self._fallback_sentiment_parsing(response_text)
-    
+
     def _parse_summary_response(self, response_text: str) -> Dict[str, Any]:
         """Parse summary response from Gemini"""
         try:
             import json
             import re
-            
-            json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+
+            json_match = re.search(r"\{.*\}", response_text, re.DOTALL)
             if json_match:
                 return json.loads(json_match.group())
             else:
                 return self._fallback_summary_parsing(response_text)
-                
+
         except Exception as e:
             logger.error(f"Error parsing summary response: {e}")
             return self._fallback_summary_parsing(response_text)
-    
+
     def _fallback_sentiment_parsing(self, response_text: str) -> Dict[str, Any]:
         """Fallback parsing for sentiment response"""
         # Simple keyword-based sentiment detection
         text_lower = response_text.lower()
-        
-        if any(word in text_lower for word in ['positive', 'bullish', 'good', 'up', 'gain']):
+
+        if any(
+            word in text_lower for word in ["positive", "bullish", "good", "up", "gain"]
+        ):
             sentiment = "positive"
-        elif any(word in text_lower for word in ['negative', 'bearish', 'bad', 'down', 'loss']):
+        elif any(
+            word in text_lower
+            for word in ["negative", "bearish", "bad", "down", "loss"]
+        ):
             sentiment = "negative"
         else:
             sentiment = "neutral"
-        
+
         return {
             "sentiment": sentiment,
             "confidence": 0.6,
             "summary": "Sentiment analysis completed with fallback parsing.",
             "key_points": [],
             "geopolitical_events": [],
-            "macroeconomic_factors": []
+            "macroeconomic_factors": [],
         }
-    
+
     def _fallback_summary_parsing(self, response_text: str) -> Dict[str, Any]:
         """Fallback parsing for summary response"""
         return {
@@ -221,8 +233,9 @@ class GeminiService:
             "top_headlines": ["Analysis completed with fallback parsing"],
             "geopolitical_summary": "Unable to extract geopolitical events from response.",
             "macro_summary": "Unable to extract macroeconomic factors from response.",
-            "investor_insights": "Please review the raw data for detailed insights."
+            "investor_insights": "Please review the raw data for detailed insights.",
         }
 
+
 # Create global instance
-gemini_service = GeminiService() 
+gemini_service = GeminiService()

@@ -11,10 +11,10 @@ from .api.routes import sentiment
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -27,13 +27,14 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Failed to connect to MongoDB: {e}")
         raise e
-    
+
     yield
-    
+
     # Shutdown
     logger.info("Shutting down Sentilytics Backend...")
     await close_mongo_connection()
     logger.info("MongoDB connection closed")
+
 
 # Create FastAPI app
 app = FastAPI(
@@ -42,7 +43,7 @@ app = FastAPI(
     description="Real-time stock sentiment analysis using AI and social media data",
     docs_url="/docs",
     redoc_url="/redoc",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # Add CORS middleware
@@ -54,6 +55,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # Add request timing middleware
 @app.middleware("http")
 async def add_process_time_header(request: Request, call_next):
@@ -63,17 +65,17 @@ async def add_process_time_header(request: Request, call_next):
     response.headers["X-Process-Time"] = str(process_time)
     return response
 
+
 # Add exception handler
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"Unhandled exception: {exc}")
-    return JSONResponse(
-        status_code=500,
-        content={"detail": "Internal server error"}
-    )
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+
 
 # Include routers
 app.include_router(sentiment.router)
+
 
 # Root endpoint
 @app.get("/")
@@ -84,8 +86,9 @@ async def root():
         "version": settings.app_version,
         "status": "running",
         "docs": "/docs",
-        "health": "/sentiment/health"
+        "health": "/sentiment/health",
     }
+
 
 # Health check endpoint
 @app.get("/health")
@@ -95,15 +98,17 @@ async def health_check():
         "status": "healthy",
         "service": settings.app_name,
         "version": settings.app_version,
-        "environment": settings.environment
+        "environment": settings.environment,
     }
+
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(
         "app.main:app",
         host="0.0.0.0",
         port=8000,
         reload=settings.debug,
-        log_level="info"
-    ) 
+        log_level="info",
+    )
