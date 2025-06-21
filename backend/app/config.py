@@ -22,9 +22,8 @@ class Settings(BaseSettings):
     gemini_api_key: str = os.getenv("GEMINI_API_KEY", "")
 
     # CORS Configuration
-    allowed_origins: str = os.getenv(
-        "ALLOWED_ORIGINS",
-        "http://localhost:3000,http://localhost:5173,http://localhost:8080",
+    allowed_origins: str | List[str] = (
+        "http://localhost:3000,http://localhost:5173,http://localhost:8080"
     )
 
     # Security Configuration
