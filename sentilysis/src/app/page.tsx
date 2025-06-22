@@ -38,6 +38,7 @@ export default function Home() {
   const [chatHistory, setChatHistory] = useState([
     { sender: "bot", text: "Hi! Ask me about any stock or market event." },
   ]);
+
   const globeConfig = {
     pointSize: 4,
     globeColor: "#0a0a23",
@@ -80,6 +81,7 @@ export default function Home() {
   //   { text: "Fed signals possible rate hike pause, impacting tech stock sentiment.", url: "#" },
   //   { text: "Ongoing US-China tensions are affecting global supply chains.", url: "#" },
   // ];
+
   const chartData = stockData
     ? {
         labels: ["Current", "Open", "High", "Low", "Prev Close"],
@@ -145,6 +147,14 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 px-4 py-6 flex flex-col items-center">
+      {/* Header */}
+      <header className="w-full max-w-7xl flex items-center justify-between mb-8 px-2">
+        <div className="flex items-center gap-2">
+          <span className="text-2xl font-extrabold tracking-tight text-blue-700 dark:text-blue-400">🌇 Sentilysis.co</span>
+          <span className="text-xs font-semibold bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded ml-2">AI Real Time Stocks Insights</span>
+        </div>
+        {/* Optionally, add a placeholder for nav or logo */}
+      </header>
       {/* Globe Background */}
       <div
         className="fixed bottom-[-30vw] right-[-20vw] z-0 pointer-events-none select-none"
