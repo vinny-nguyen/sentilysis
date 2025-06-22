@@ -54,7 +54,7 @@ Score: {post['score']}
 
         # Create overview record according to schema
         overview_record = {
-            "post_id": f"reddit_{reddit_data[i].get('id', f'post_{i}')}",
+            "post_id": "",
             "date": post_date,
             "ticker": ticker.upper(),
             "title": reddit_data[i]["title"],
