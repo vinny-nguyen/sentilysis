@@ -132,6 +132,7 @@ def scrape_reddit(stock_ticker: str) -> List[Dict]:
 
             # Prepare result dictionary
             result = {
+                "id": post.id,
                 "title": title,
                 "summary": summary,
                 "stock_ticker": stock_ticker,

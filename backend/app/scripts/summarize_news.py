@@ -7,6 +7,7 @@ import logging
 from bs4 import BeautifulSoup
 from typing import Dict, Optional, List
 from datetime import datetime
+import hashlib
 
 # Add the backend directory to the path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -153,7 +154,9 @@ Content: {article_data['content'][:2000]}  # Limit content length for AI process
 
         # Create overview record according to schema
         overview_record = {
-            "post_id": "",  # Generate unique ID from URL hash
+            "post_id": hashlib.sha256(
+                url.encode()
+            ).hexdigest(),  # Generate unique ID from URL hash
             "date": datetime.utcnow().strftime("%Y-%m-%d"),
             "ticker": ticker.upper(),
             "title": article_data["title"],

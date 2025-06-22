@@ -1,3 +1,4 @@
+import hashlib
 import requests
 import json
 import sys
@@ -54,7 +55,9 @@ Score: {post['score']}
 
         # Create overview record according to schema
         overview_record = {
-            "post_id": "",
+            "post_id": hashlib.sha256(
+                reddit_data[i]["title"].encode("utf-8")
+            ).hexdigest(),  # Generate unique ID from URL hash
             "date": post_date,
             "ticker": ticker.upper(),
             "title": reddit_data[i]["title"],
