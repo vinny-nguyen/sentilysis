@@ -44,9 +44,9 @@ python -m app.main
 - `GET /ai/health` - AI service health check
 
 ### Overview Endpoints (Sentiment Analysis Records)
-- `GET /overview/search` - Search records by ticker and specific date
-- `GET /overview/search/range` - Search records by ticker and date range
-- `GET /overview/ticker/{ticker}` - Get all records for a specific ticker
+- `POST /overview/search` - Search records by ticker and specific date
+- `POST /overview/search/range` - Search records by ticker and date range
+- `POST /overview/ticker/{ticker}` - Get all records for a specific ticker
 - `GET /overview/status` - Check overview service status
 - `GET /overview/health` - Overview service health check
 

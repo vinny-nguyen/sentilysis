@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException
 from typing import Dict, Any, List, Optional
 from pydantic import BaseModel
 from ...services.overview_service import OverviewService
@@ -12,43 +12,53 @@ overview_service = OverviewService()
 class SearchRequest(BaseModel):
     ticker: str
     date: str
+    limit: int = 100
+    skip: int = 0
 
 
-@router.get("/search", response_model=Dict[str, Any])
-async def search_overview_records(
-    ticker: str = Query(..., description="Stock ticker symbol (e.g., AAPL, TSLA)"),
-    date: str = Query(..., description="Date in YYYY-MM-DD format"),
-    limit: int = Query(100, description="Maximum number of records to return"),
-    skip: int = Query(0, description="Number of records to skip for pagination"),
-):
+class SearchRangeRequest(BaseModel):
+    ticker: str
+    start_date: str
+    end_date: str
+    limit: int = 100
+    skip: int = 0
+
+
+class TickerRequest(BaseModel):
+    limit: int = 100
+    skip: int = 0
+
+
+@router.post("/search", response_model=Dict[str, Any])
+async def search_overview_records(request: SearchRequest):
     """Search for existing overview records based on stock ticker and date"""
     try:
         # Validate ticker format
-        if not ticker or not ticker.strip():
+        if not request.ticker or not request.ticker.strip():
             raise HTTPException(status_code=400, detail="Ticker is required")
 
-        ticker = ticker.strip().upper()
+        ticker = request.ticker.strip().upper()
 
         # Validate date format
         try:
             from datetime import datetime
 
-            datetime.strptime(date, "%Y-%m-%d")
+            datetime.strptime(request.date, "%Y-%m-%d")
         except ValueError:
             raise HTTPException(
                 status_code=400, detail="Invalid date format. Use YYYY-MM-DD"
             )
 
         # Search for records with the specific ticker and date
-        filter_dict = {"ticker": ticker, "date": date}
+        filter_dict = {"ticker": ticker, "date": request.date}
 
         records = await overview_service.get_many(
-            filter_dict=filter_dict, skip=skip, limit=limit
+            filter_dict=filter_dict, skip=request.skip, limit=request.limit
         )
 
         return {
             "ticker": ticker,
-            "date": date,
+            "date": request.date,
             "records": records,
             "count": len(records),
             "status": "success",
@@ -62,28 +72,22 @@ async def search_overview_records(
         )
 
 
-@router.get("/search/range", response_model=Dict[str, Any])
-async def search_overview_records_by_range(
-    ticker: str = Query(..., description="Stock ticker symbol (e.g., AAPL, TSLA)"),
-    start_date: str = Query(..., description="Start date in YYYY-MM-DD format"),
-    end_date: str = Query(..., description="End date in YYYY-MM-DD format"),
-    limit: int = Query(100, description="Maximum number of records to return"),
-    skip: int = Query(0, description="Number of records to skip for pagination"),
-):
+@router.post("/search/range", response_model=Dict[str, Any])
+async def search_overview_records_by_range(request: SearchRangeRequest):
     """Search for existing overview records based on stock ticker and date range"""
     try:
         # Validate ticker format
-        if not ticker or not ticker.strip():
+        if not request.ticker or not request.ticker.strip():
             raise HTTPException(status_code=400, detail="Ticker is required")
 
-        ticker = ticker.strip().upper()
+        ticker = request.ticker.strip().upper()
 
         # Validate date formats
         try:
             from datetime import datetime
 
-            datetime.strptime(start_date, "%Y-%m-%d")
-            datetime.strptime(end_date, "%Y-%m-%d")
+            datetime.strptime(request.start_date, "%Y-%m-%d")
+            datetime.strptime(request.end_date, "%Y-%m-%d")
         except ValueError:
             raise HTTPException(
                 status_code=400, detail="Invalid date format. Use YYYY-MM-DD"
@@ -91,17 +95,17 @@ async def search_overview_records_by_range(
 
         # Search for records within the date range
         records = await overview_service.get_by_date_range(
-            start_date=start_date,
-            end_date=end_date,
+            start_date=request.start_date,
+            end_date=request.end_date,
             ticker=ticker,
-            skip=skip,
-            limit=limit,
+            skip=request.skip,
+            limit=request.limit,
         )
 
         return {
             "ticker": ticker,
-            "start_date": start_date,
-            "end_date": end_date,
+            "start_date": request.start_date,
+            "end_date": request.end_date,
             "records": records,
             "count": len(records),
             "status": "success",
@@ -116,12 +120,8 @@ async def search_overview_records_by_range(
         )
 
 
-@router.get("/ticker/{ticker}", response_model=Dict[str, Any])
-async def get_overview_records_by_ticker(
-    ticker: str,
-    limit: int = Query(100, description="Maximum number of records to return"),
-    skip: int = Query(0, description="Number of records to skip for pagination"),
-):
+@router.post("/ticker/{ticker}", response_model=Dict[str, Any])
+async def get_overview_records_by_ticker(ticker: str, request: TickerRequest):
     """Get all overview records for a specific ticker"""
     try:
         # Validate ticker format
@@ -132,7 +132,7 @@ async def get_overview_records_by_ticker(
 
         # Get records for the ticker
         records = await overview_service.get_by_ticker(
-            ticker=ticker, skip=skip, limit=limit
+            ticker=ticker, skip=request.skip, limit=request.limit
         )
 
         return {
@@ -158,9 +158,9 @@ async def get_overview_status():
         "service": "Overview",
         "status": "available",
         "endpoints": [
-            "GET /overview/search - Search by ticker and date",
-            "GET /overview/search/range - Search by ticker and date range",
-            "GET /overview/ticker/{ticker} - Get all records for a ticker",
+            "POST /overview/search - Search by ticker and date",
+            "POST /overview/search/range - Search by ticker and date range",
+            "POST /overview/ticker/{ticker} - Get all records for a ticker",
         ],
     }
 
