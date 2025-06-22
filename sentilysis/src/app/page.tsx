@@ -1,6 +1,6 @@
 "use client";
 // import { cn } from "../lib/utils";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -61,6 +61,25 @@ export default function Home() {
     autoRotate: true,
     autoRotateSpeed: 0.5,
   };
+
+  const memoizedGlobe = useMemo(() => (
+  <div
+    className="fixed bottom-[-30vw] right-[-20vw] z-0 pointer-events-none select-none"
+    style={{
+      width: "90vw",
+      height: "90vw",
+      minWidth: 1000,
+      minHeight: 500,
+      maxWidth: 2000,
+      maxHeight: 1200,
+      opacity: 0.18,
+      filter: "blur(0px)",
+    }}
+  >
+    <World globeConfig={globeConfig} data={[]} />
+  </div>
+), []);
+
 
   const sentiment = { positive: 60, neutral: 25, negative: 15 };
   const headlines = { 
@@ -156,21 +175,7 @@ export default function Home() {
         {/* Optionally, add a placeholder for nav or logo */}
       </header>
       {/* Globe Background */}
-      <div
-        className="fixed bottom-[-30vw] right-[-20vw] z-0 pointer-events-none select-none"
-        style={{
-          width: "90vw",
-          height: "90vw",
-          minWidth: 1000,
-          minHeight: 500,
-          maxWidth: 2000,
-          maxHeight: 1200,
-          opacity: 0.18, // subtle effect
-          filter: "blur(0px)",
-        }}
-      >
-        <World globeConfig={globeConfig} data={[]} />
-      </div>
+      {memoizedGlobe}
       <div className="relative z-0 w-full flex flex-col items-center">
       {/* Search Bar */}
       <form
