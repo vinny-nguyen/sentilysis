@@ -12,6 +12,9 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import dynamic from "next/dynamic";
+
+const World = dynamic(() => import("../components/globe").then(m => m.World), {ssr: false});
 
 interface StockData {
   symbol: string;
@@ -36,6 +39,29 @@ export default function Home() {
     { sender: "bot", text: "Hi! Ask me about any stock or market event." },
   ]);
 
+  const globeConfig = {
+    pointSize: 4,
+    globeColor: "#0a0a23",
+    showAtmosphere: true,
+    atmosphereColor: "#ffffff",
+    atmosphereAltitude: 0.1,
+    emissive: "#1e293b",
+    emissiveIntensity: 0.1,
+    shininess: 0.9,
+    polygonColor: "rgba(255,255,255,0.7)",
+    ambientLight: "#38bdf8",
+    directionalLeftLight: "#ffffff",
+    directionalTopLight: "#ffffff",
+    pointLight: "#ffffff",
+    arcTime: 1000,
+    arcLength: 0.9,
+    rings: 1,
+    maxRings: 3,
+    initialPosition: { lat: 30, lng: 120 }, // cool angle, adjust as you like
+    autoRotate: true,
+    autoRotateSpeed: 0.5,
+  };
+
   const sentiment = { positive: 60, neutral: 25, negative: 15 };
   const headlines = { 
     positive: [
@@ -55,6 +81,7 @@ export default function Home() {
   //   { text: "Fed signals possible rate hike pause, impacting tech stock sentiment.", url: "#" },
   //   { text: "Ongoing US-China tensions are affecting global supply chains.", url: "#" },
   // ];
+
   const chartData = stockData
     ? {
         labels: ["Current", "Open", "High", "Low", "Prev Close"],
@@ -98,10 +125,10 @@ export default function Home() {
       if (res.ok) {
         setStockData(data);
       } else {
-        setError(data.error || "Failed to fetch stock data");
+        setError(data.error || "Failed to fetch stock data. Please try again ☹️.");
       }
     } catch {
-      setError("Failed to fetch stock data");
+      setError("Failed to fetch stock data. Please try again ☹️.");
     } finally {
       setLoading(false);
     }
@@ -120,6 +147,31 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 px-4 py-6 flex flex-col items-center">
+      {/* Header */}
+      <header className="w-full max-w-7xl flex items-center justify-between mb-8 px-2">
+        <div className="flex items-center gap-2">
+          <span className="text-2xl font-extrabold tracking-tight text-blue-700 dark:text-blue-400">🌇 Sentilysis.co</span>
+          <span className="text-xs font-semibold bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded ml-2">AI Real Time Stocks Insights</span>
+        </div>
+        {/* Optionally, add a placeholder for nav or logo */}
+      </header>
+      {/* Globe Background */}
+      <div
+        className="fixed bottom-[-30vw] right-[-20vw] z-0 pointer-events-none select-none"
+        style={{
+          width: "90vw",
+          height: "90vw",
+          minWidth: 1000,
+          minHeight: 500,
+          maxWidth: 2000,
+          maxHeight: 1200,
+          opacity: 0.18, // subtle effect
+          filter: "blur(0px)",
+        }}
+      >
+        <World globeConfig={globeConfig} data={[]} />
+      </div>
+      <div className="relative z-0 w-full flex flex-col items-center">
       {/* Search Bar */}
       <form
         onSubmit={handleSearch}
@@ -275,6 +327,7 @@ export default function Home() {
       <li><a href="#" target="_blank" rel="noopener noreferrer">Federal Reserve Interest Rate News – Source</a></li>
       <li><a href="#" target="_blank" rel="noopener noreferrer">US-China Trade Tensions Coverage – Source</a></li>
     </ul>
+  </div>
   </div>
   </div>
   </div>

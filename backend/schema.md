@@ -34,15 +34,16 @@ EXAMPLE OUTPUT:
 {
   "reports": [
     {
-      "post_id": "abc123",
+      "post_id": "primary_id",
       "date": "2025-06-20",
       "ticker": "AAPL",
       "title": "Is AAPL about to jump after earnings?",
       "summary": "User argues that strong iPhone sales figures leaked ahead of Q2 earnings could push the stock above $190.",
-      "financial_insights": ["$190 price target", "iPhone sales", "earnings beat speculation"],
-      "geopolitical_context": ["US-China trade tensions", "new EU privacy regs"],
-      "sentiment": "positive",
-      "other_relevant_info": ["links to leaked slide deck"]
+      "source_link": "linkMclinkface",
+      "type": "reddit or google",
+      "sentiment": "postive/neutural/negative",
+      "sentiment_score": 0.0001 
     },
   ]
 }
+```
