@@ -1,7 +1,6 @@
 from typing import Dict, Any, List, Optional, Union
 from datetime import datetime, date
 from enum import Enum
-from .crud_service import create_crud_service
 import logging
 
 logger = logging.getLogger(__name__)
@@ -26,8 +25,17 @@ class OverviewService:
     """Service for overview collection operations"""
 
     def __init__(self):
-        # Create CRUD service for overview collection
-        self.crud_service = create_crud_service("overview")
+        # Don't initialize CRUD service during __init__
+        self._crud_service = None
+
+    @property
+    def crud_service(self):
+        """Lazy initialization of CRUD service"""
+        if self._crud_service is None:
+            from .crud_service import create_crud_service
+
+            self._crud_service = create_crud_service("overview")
+        return self._crud_service
 
     async def create_one(self, record_data: Dict[str, Any]) -> Dict[str, Any]:
         """Create a single overview record"""

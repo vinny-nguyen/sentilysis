@@ -6,8 +6,6 @@ This demonstrates how to use the overview service for sentiment analysis records
 import sys
 import os
 
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-
 from app.services.overview_service import overview_service, SourceType, SentimentView
 import asyncio
 
