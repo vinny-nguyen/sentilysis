@@ -1,5 +1,10 @@
-# backend/app/services/test_service.py
-from ..database import get_collection
+# backend/test_scripts/test_service.py
+import sys
+import os
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+
+from app.database import get_collection
 import logging
 
 logger = logging.getLogger(__name__)

@@ -7,7 +7,8 @@ import logging
 import time
 
 from .database import close_mongo_connection, connect_to_mongo
-from .services.test_service import TestService
+from ..test_scripts.test_service import TestService
+from ..test_scripts.overview_example import example_overview_operations
 
 # Configure logging
 logging.basicConfig(
@@ -118,8 +119,9 @@ async def health_check():
 async def test_database():
     """Test database connection"""
     await connect_to_mongo()
-    test_service = TestService()
-    return await test_service.test_connection()
+    # test_service = TestService()
+    # tmp = await test_service.test_connection()
+    return example_overview_operations()
 
 
 if __name__ == "__main__":

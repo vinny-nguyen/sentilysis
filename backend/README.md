@@ -55,29 +55,147 @@ The Gemini service provides:
 - **Chat Interface**: Interactive chat with AI
 - **Insights Generation**: Generate insights about topics (general, financial, technical)
 
-## Example Usage
+## Overview Service (Sentiment Analysis Records)
 
-### Generate Text
-```bash
-curl -X POST "http://localhost:8000/ai/generate" \
-  -H "Content-Type: application/json" \
-  -d '{"prompt": "Write a short story about a robot", "max_tokens": 500}'
+The Overview service manages sentiment analysis records with the following schema:
+
+```json
+{
+  "post_id": "string",
+  "date": "2025-06-20",
+  "ticker": "string",
+  "title": "string",
+  "sentiment": {
+    "summary": "string",
+    "view": "positive|neutral|negative",
+    "tone": "string"
+  },
+  "source_link": "string",
+  "type": "reddit|google",
+  "sentiment_score": 0.0001
+}
 ```
 
-### Analyze Text
-```bash
-curl -X POST "http://localhost:8000/ai/analyze" \
-  -H "Content-Type: application/json" \
-  -d '{"text": "I love this product!", "analysis_type": "sentiment"}'
+### Basic Operations
+
+```python
+from app.services.overview_service import overview_service
+
+# Create a sentiment record
+record = await overview_service.create_one({
+    "post_id": "reddit_123",
+    "date": "2025-06-20",
+    "ticker": "AAPL",
+    "title": "Apple's new product announcement",
+    "sentiment": {
+        "summary": "Positive reaction to Apple's announcement",
+        "view": "positive",
+        "tone": "enthusiastic"
+    },
+    "source_link": "https://reddit.com/r/stocks/comments/123",
+    "type": "reddit",
+    "sentiment_score": 0.85
+})
+
+# Get multiple records with pagination
+records = await overview_service.get_many(limit=10, skip=0)
+
+# Delete records by filter
+deleted_count = await overview_service.delete_many({"ticker": "TSLA"})
 ```
 
-### Chat with AI
-```bash
-curl -X POST "http://localhost:8000/ai/chat" \
-  -H "Content-Type: application/json" \
-  -d '{"message": "What is machine learning?", "context": "educational"}'
+### Advanced Queries
+
+#### Get Records by Ticker
+```python
+# Get all records for a specific stock
+aapl_records = await overview_service.get_by_ticker("AAPL")
+
+# Get records with pagination
+aapl_records = await overview_service.get_by_ticker("AAPL", skip=0, limit=50)
 ```
 
+#### Get Records by Sentiment
+```python
+from app.services.overview_service import SentimentView
+
+# Get all positive sentiment records
+positive_records = await overview_service.get_by_sentiment(SentimentView.POSITIVE)
+
+# Get negative sentiment records for a specific ticker
+negative_aapl = await overview_service.get_by_sentiment(
+    SentimentView.NEGATIVE, 
+    ticker="AAPL"
+)
+```
+
+#### Get Records by Source Type
+```python
+from app.services.overview_service import SourceType
+
+# Get all Reddit records
+reddit_records = await overview_service.get_by_source_type(SourceType.REDDIT)
+
+# Get Google News records for a specific ticker
+google_tsla = await overview_service.get_by_source_type(
+    SourceType.GOOGLE, 
+    ticker="TSLA"
+)
+```
+
+#### Get Records by Date Range
+```python
+# Get records from a specific date range
+recent_records = await overview_service.get_by_date_range(
+    "2025-06-15", 
+    "2025-06-21"
+)
+
+# Get records for a specific ticker within date range
+aapl_week = await overview_service.get_by_date_range(
+    "2025-06-15", 
+    "2025-06-21", 
+    ticker="AAPL"
+)
+```
+
+#### Complex Filtering
+```python
+# Custom filter with multiple conditions
+custom_filter = {
+    "ticker": "AAPL",
+    "sentiment.view": "positive",
+    "type": "reddit",
+    "sentiment_score": {"$gte": 0.5}
+}
+
+filtered_records = await overview_service.get_many(
+    filter_dict=custom_filter,
+    sort_by=[("date", -1), ("sentiment_score", -1)]
+)
+```
+
+#### Aggregation and Analytics
+```python
+# Count records by ticker
+aapl_count = await overview_service.count_by_ticker("AAPL")
+tsla_count = await overview_service.count_by_ticker("TSLA")
+
+# Get records by post ID
+specific_record = await overview_service.get_by_post_id("reddit_123456")
+```
+
+#### Bulk Operations
+```python
+# Delete all records for a ticker
+deleted_count = await overview_service.delete_by_ticker("TSLA")
+
+# Delete records within a date range
+deleted_count = await overview_service.delete_by_date_range(
+    "2025-06-01", 
+    "2025-06-30"
+)
+```
 ## Development
 
 The application runs on `http://localhost:8000` with auto-reload enabled for development.
@@ -86,6 +204,7 @@ The application runs on `http://localhost:8000` with auto-reload enabled for dev
 
 - FastAPI framework
 - Google Gemini AI integration
+- MongoDB Atlas integration with CRUD services
 - CORS middleware enabled
 - Request timing middleware
 - Global exception handling
