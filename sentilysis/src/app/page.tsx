@@ -271,17 +271,17 @@ async function getSentimentSummary(ticker: string) {
 
 const [sourceLinks, setSourceLinks] = useState<{ title: string; url: string }[]>([]);
 
-const handleSearch = async (e: React.FormEvent) => {
-  e.preventDefault();
+const handleSearch = async (e: React.FormEvent | null, tickerOverride?: string) => {
+  if (e) e.preventDefault();
+  const searchTicker = tickerOverride || ticker;
   setLoading(true);
   setError("");
   setStockData(null);
   setSentimentSummary(null);
   setSentimentStats({positive: 0, neutral: 0, negative: 0, total: 0});
-
   try {
     // Fetch stock data
-    const res = await fetch(`/api/stock?ticker=${ticker}`);
+    const res = await fetch(`/api/stock?ticker=${searchTicker}`);
     const data = await res.json();
     if (res.ok) {
       setStockData(data);
@@ -290,11 +290,10 @@ const handleSearch = async (e: React.FormEvent) => {
     }
 
     // Get both sentiment summary + stats in one go
-    const { summaryHTML, stats, sourceLinks } = await getSentimentSummary(ticker);
+    const { summaryHTML, stats, sourceLinks } = await getSentimentSummary(searchTicker);
     setSentimentStats(stats);
     setSentimentSummary(summaryHTML);
     setSourceLinks(sourceLinks);
-
   } catch {
     setError("Failed to fetch stock data or sentiment ☹️.");
   } finally {
@@ -385,11 +384,9 @@ const handleSearch = async (e: React.FormEvent) => {
                   e.preventDefault();
                   setTicker(stock.symbol);
                   setShowDropdown(false);
-                  // Wait for state to update, then trigger search:
                   setTimeout(() => {
-                    // Creates fake event for handleSearch:
-                    handleSearch({ preventDefault: () => {} }as React.FormEvent);
-                  }, 0)
+                    handleSearch(null, stock.symbol);
+                  }, 0);
                 }}
               >
                 <span className="font-semibold">{stock.symbol}</span>
