@@ -1,5 +1,6 @@
 import os
 import datetime
+import json
 from typing import List, Dict
 from dotenv import load_dotenv
 import praw
@@ -40,18 +41,16 @@ def scrape_reddit(stock_ticker: str) -> List[Dict]:
     for subreddit_name in SUBREDDITS:
         subreddit = reddit.subreddit(subreddit_name)
         # Search for recent and relevant posts mentioning the stock ticker
-        for post in subreddit.search(query, sort='relevance', limit=2):
+        for post in subreddit.search(query, sort='relevance', limit=3):
             if post.id in posts_seen:
                 continue
             posts_seen.add(post.id)
             # Extract post metadata
             title = post.title
             selftext = post.selftext
-            author = str(post.author) if post.author else 'deleted'
             date = datetime.datetime.fromtimestamp(post.created_utc).isoformat()
             subreddit_name = post.subreddit.display_name
             score = post.score
-            permalink = f'https://reddit.com{post.permalink}'
 
             # Get the top (most upvoted, non-stickied) comment efficiently
             top_comment = "No top comment found."
@@ -64,12 +63,10 @@ def scrape_reddit(stock_ticker: str) -> List[Dict]:
 
             # Build summary
             summary = f"Title: {title}\nContent: {selftext}\nTop Comment: {top_comment}"
-            # print(permalink)
             # print(summary)
             # print('\n\n\n')
             # Sentiment analysis using TextBlob
             text = f'{title} {selftext} {top_comment}'
-            sentiment = TextBlob(text).sentiment.polarity  # Range: -1 (neg) to 1 (pos)
 
             # Detect geopolitical/macro keywords
             found_keywords = [kw for kw in GEO_KEYWORDS if kw.lower() in text.lower()]
@@ -79,19 +76,35 @@ def scrape_reddit(stock_ticker: str) -> List[Dict]:
                 "title": title,
                 'summary': summary,
                 'stock_ticker': stock_ticker,
-                'author': author,
                 'date': date,  # ISO 8601 string of post creation
                 'subreddit': subreddit_name,
                 'score': score,
-                'permalink': permalink,
-                'sentiment': sentiment,
                 'geopolitics_found': found_keywords
             }
             all_posts.append(result)
     # Sort all posts by date (most recent first), then by score (most upvoted)
     all_posts.sort(key=lambda x: (x['date'], x['score']), reverse=True)
     # Return only the top 5
-    return all_posts[:5]
+    print(f"{len(all_posts)} posts found")
+    
+    return all_posts
+
+def format_reddit_data(reddit_data: List[Dict]) -> str:
+
+    return json.dumps(reddit_data, indent=4)
+
+if __name__ == "__main__":
+    ticker_to_scrape = 'AAPL'
+    print(f'Scraping Reddit for {ticker_to_scrape} and formatting as JSON...')
+    results = scrape_reddit(ticker_to_scrape)
+    
+    # Convert the list of dictionaries to a JSON string
+    json_output = json.dumps(results, indent=4)
+    
+    # print(json.dumps(results, indent=4))
+    
+    
+    print(f'Successfully formatted {len(results)} posts into JSON.')
 
 # Example usage
 # stock_ticker = 'NVDA'

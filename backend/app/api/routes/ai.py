@@ -8,19 +8,19 @@ router = APIRouter(prefix="/ai", tags=["ai"])
 
 class TextGenerationRequest(BaseModel):
     prompt: str
-    max_tokens: int = 1000
+    #max_tokens: int = 200
 
 
 class TextAnalysisRequest(BaseModel):
     text: str
-    max_tokens: int = 1000
+    # max_tokens: int = 200
 
 
 @router.post("/generate", response_model=Dict[str, Any])
 async def generate_text(request: TextGenerationRequest):
     """Generate text using Gemini AI"""
     try:
-        result = await gemini_service.summarize_text(request.prompt, request.max_tokens)
+        result = await gemini_service.summarize_text(request.prompt)
         return {"generated_text": result, "prompt": request.prompt, "status": "success"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating text: {str(e)}")

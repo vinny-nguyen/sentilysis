@@ -1,6 +1,6 @@
 certifi==2025.6.15
 charset-normalizer==3.4.2
-click==8.2.1
+click==8.1.8
 idna==3.10
 joblib==1.5.1
 nltk==3.9.1

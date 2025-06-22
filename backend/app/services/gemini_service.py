@@ -27,8 +27,15 @@ class GeminiService:
         try:
             if not self.client:
                 return "Gemini API key not configured"
+            
 
-            response = self.client.generate_content(prompt, max_tokens=max_tokens)
+            response = self.client.generate_content(
+            prompt,
+            generation_config={
+                "max_output_tokens": max_tokens
+            }
+        )
+  
             return response.text
         except Exception as e:
             logger.error(f"Error generating text with Gemini: {e}")
