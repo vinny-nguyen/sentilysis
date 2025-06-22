@@ -84,9 +84,10 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 
 # Include routers
-from .api.routes import ai
+from .api.routes import ai, overview
 
 app.include_router(ai.router)
+app.include_router(overview.router)
 
 
 # Root endpoint
@@ -99,6 +100,7 @@ async def root():
         "status": "running",
         "docs": "/docs",
         "ai_endpoints": "/ai",
+        "overview_endpoints": "/overview",
     }
 
 
@@ -119,11 +121,15 @@ async def test_database():
     try:
         # Import here to avoid circular import issues
         from .test_scripts.test_service import TestService
-        from .test_scripts.overview_example import example_overview_operations
+        from .test_scripts.overview_example import (
+            example_overview_operations,
+            example_usage_in_app,
+        )
 
         test_service = TestService()
         result = await test_service.test_connection()
         await example_overview_operations()
+        await example_usage_in_app()
         return result
     except Exception as e:
         logger.error(f"Database test failed: {e}")

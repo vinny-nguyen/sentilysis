@@ -14,6 +14,20 @@ class CRUDService:
     def __init__(self, collection: AgnosticCollection):
         self.collection = collection
 
+    def _convert_objectid_to_string(self, obj: Any) -> Any:
+        """Recursively convert ObjectId to string for JSON serialization"""
+        if isinstance(obj, ObjectId):
+            return str(obj)
+        elif isinstance(obj, dict):
+            return {
+                key: self._convert_objectid_to_string(value)
+                for key, value in obj.items()
+            }
+        elif isinstance(obj, list):
+            return [self._convert_objectid_to_string(item) for item in obj]
+        else:
+            return obj
+
     # CREATE operations
     async def create_one(self, document: Dict[str, Any]) -> Dict[str, Any]:
         """Create a single document"""
@@ -26,7 +40,7 @@ class CRUDService:
             document["_id"] = result.inserted_id
 
             logger.info(f"Created document with ID: {result.inserted_id}")
-            return document
+            return self._convert_objectid_to_string(document)
         except Exception as e:
             logger.error(f"Error creating document: {e}")
             raise e
@@ -48,7 +62,7 @@ class CRUDService:
                 doc["_id"] = result.inserted_ids[i]
 
             logger.info(f"Created {len(documents)} documents")
-            return documents
+            return [self._convert_objectid_to_string(doc) for doc in documents]
         except Exception as e:
             logger.error(f"Error creating documents: {e}")
             raise e
@@ -58,7 +72,7 @@ class CRUDService:
         """Find a single document"""
         try:
             document = await self.collection.find_one(filter_dict)
-            return document
+            return self._convert_objectid_to_string(document) if document else None
         except Exception as e:
             logger.error(f"Error finding document: {e}")
             raise e
@@ -72,7 +86,7 @@ class CRUDService:
                 document_id = ObjectId(document_id)
 
             document = await self.collection.find_one({"_id": document_id})
-            return document
+            return self._convert_objectid_to_string(document) if document else None
         except Exception as e:
             logger.error(f"Error finding document by ID: {e}")
             raise e
@@ -98,7 +112,7 @@ class CRUDService:
             cursor = cursor.skip(skip).limit(limit)
 
             documents = await cursor.to_list(length=limit)
-            return documents
+            return [self._convert_objectid_to_string(doc) for doc in documents]
         except Exception as e:
             logger.error(f"Error finding documents: {e}")
             raise e
@@ -242,7 +256,7 @@ class CRUDService:
                 return_document=True if return_document else False,
             )
 
-            return result
+            return self._convert_objectid_to_string(result) if result else None
         except Exception as e:
             logger.error(f"Error in find_one_and_update: {e}")
             raise e
@@ -252,7 +266,7 @@ class CRUDService:
         try:
             cursor = self.collection.aggregate(pipeline)
             results = await cursor.to_list(length=None)
-            return results
+            return [self._convert_objectid_to_string(doc) for doc in results]
         except Exception as e:
             logger.error(f"Error in aggregation: {e}")
             raise e
