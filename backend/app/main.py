@@ -29,7 +29,7 @@ async def lifespan(app: FastAPI):
         raise e
 
     scheduler_service.start()
-    scheduler_service.add_interval_job(lambda: print("hello"), "thing", seconds=5)
+    # scheduler_service.add_interval_job()
 
     yield
 
@@ -131,11 +131,20 @@ async def test_database():
             example_usage_in_app,
         )
 
-        test_service = TestService()
-        result = await test_service.test_connection()
-        await example_overview_operations()
-        await example_usage_in_app()
-        return result
+        # test_service = TestService()
+        # result = await test_service.test_connection()
+        # await example_overview_operations()
+        # await example_usage_in_app()
+        # Import generation service
+        from .services.generation_service import generation_service
+
+        # Run generation service
+        await generation_service.generate_and_store_overviews()
+
+        return {
+            "status": "success",
+            "message": "Generation service completed successfully",
+        }
     except Exception as e:
         logger.error(f"Database test failed: {e}")
         return {"status": "error", "message": str(e)}
