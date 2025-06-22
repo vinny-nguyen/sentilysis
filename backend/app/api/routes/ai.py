@@ -8,7 +8,7 @@ router = APIRouter(prefix="/ai", tags=["ai"])
 
 class TextGenerationRequest(BaseModel):
     prompt: str
-    #max_tokens: int = 200
+    # max_tokens: int = 200
 
 
 class TextAnalysisRequest(BaseModel):
@@ -30,7 +30,7 @@ async def generate_text(request: TextGenerationRequest):
 async def analyze_text(request: TextAnalysisRequest):
     """Analyze text using Gemini AI"""
     try:
-        result = await gemini_service.analyze_text(request.text, request.max_tokens)
+        result = await gemini_service.analyze_text(request.text)
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error analyzing text: {str(e)}")
