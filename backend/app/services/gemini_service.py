@@ -64,7 +64,21 @@ class GeminiService:
                 return {"error": "Gemini API key not configured"}
 
             prompt = (
-                f"Please analyze the following text and provide insights:\n\n{text}"
+                f"""
+                    You will analyze the following text about a stock and its sentiment.
+                    Please provide a short description summarizing the overall sentiment.
+                    Then, list reasons found in the text that support positive sentiment, neutral sentiment, and negative sentiment.
+                    Return ONLY a JSON object with these fields:
+
+                    {{
+                    "description": string,          // brief summary of overall sentiment
+                    "positive": string[],           // reasons supporting positive sentiment
+                    "neutral": string[],            // reasons supporting neutral sentiment
+                    "negative": string[]            // reasons supporting negative sentiment
+                    }}
+
+                    Input text:
+                    {text}"""
             )
             response = self.client.generate_content(
                 prompt, generation_config={"max_output_tokens": max_tokens}

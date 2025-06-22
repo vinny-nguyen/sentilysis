@@ -1,5 +1,6 @@
 "use client";
 // import { cn } from "../lib/utils";
+
 import { useState, useMemo } from "react";
 import { Line } from "react-chartjs-2";
 import {
@@ -13,9 +14,11 @@ import {
   Legend,
 } from "chart.js";
 import dynamic from "next/dynamic";
+import React from "react";
 
 const World = dynamic(() => import("../components/globe").then(m => m.World), {ssr: false});
 const tickers = [];
+
 
 // List of 20 stock tickers:
 const STOCKS = [
@@ -270,17 +273,17 @@ async function getSentimentSummary(ticker: string) {
 
 const [sourceLinks, setSourceLinks] = useState<{ title: string; url: string }[]>([]);
 
-const handleSearch = async (e: React.FormEvent) => {
-  e.preventDefault();
+const handleSearch = async (e: React.FormEvent | null, tickerOverride?: string) => {
+  if (e) e.preventDefault();
+  const searchTicker = tickerOverride || ticker;
   setLoading(true);
   setError("");
   setStockData(null);
   setSentimentSummary(null);
   setSentimentStats({positive: 0, neutral: 0, negative: 0, total: 0});
-
   try {
     // Fetch stock data
-    const res = await fetch(`/api/stock?ticker=${ticker}`);
+    const res = await fetch(`/api/stock?ticker=${searchTicker}`);
     const data = await res.json();
     if (res.ok) {
       setStockData(data);
@@ -289,11 +292,10 @@ const handleSearch = async (e: React.FormEvent) => {
     }
 
     // Get both sentiment summary + stats in one go
-    const { summaryHTML, stats, sourceLinks } = await getSentimentSummary(ticker);
+    const { summaryHTML, stats, sourceLinks } = await getSentimentSummary(searchTicker);
     setSentimentStats(stats);
     setSentimentSummary(summaryHTML);
     setSourceLinks(sourceLinks);
-
   } catch {
     setError("Failed to fetch stock data or sentiment ☹️.");
   } finally {
@@ -302,16 +304,67 @@ const handleSearch = async (e: React.FormEvent) => {
 };
 
 
-  const handleChat = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!chatInput.trim()) return;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+
+const handleChat = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!chatInput.trim()) return;
+
+  const userMessage = chatInput;
+  setChatHistory((prev) => [...prev, { sender: "user", text: userMessage }]);
+  setChatInput("");
+
+  if (!GEMINI_API_KEY) {
     setChatHistory((prev) => [
       ...prev,
-      { sender: "user", text: chatInput },
-      { sender: "bot", text: "(Mock) Here's a smart answer about: " + chatInput },
+      { sender: "bot", text: "Error: Gemini API key is not set. Please set NEXT_PUBLIC_GEMINI_API_KEY in your .env.local file." },
     ]);
-    setChatInput("");
-  };
+    return;
+  }
+
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: `You are a chatbot on a sentiment analysis web app. The user will query you information related to ${ticker}. Answer in less than 100 words and give a neurtal, grounded, professional answer. User Query:  ${userMessage}`
+          }] }],
+        }),
+      }
+    );
+
+    const data = await res.json();
+    const botReply = data?.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, no response.";
+
+    setChatHistory((prev) => [...prev, { sender: "bot", text: botReply }]);
+  } catch (err) {
+    console.error("Error calling Gemini API:", err);
+    setChatHistory((prev) => [
+      ...prev,
+      { sender: "bot", text: "Error fetching response from Gemini." },
+    ]);
+  }
+};
+
+
+  // Helper to parse sentiment summary JSON (even if wrapped in code block)
+  function parseSentimentSummary(summary: string | null) {
+    if (!summary) return null;
+    let clean = summary.trim();
+    // Remove code block markers and 'json' if present
+    if (clean.startsWith('```')) {
+      clean = clean.replace(/^```json|^```/i, '').replace(/```$/, '').trim();
+    }
+    try {
+      return JSON.parse(clean);
+    } catch {
+      return null;
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 px-4 py-6 flex flex-col items-center">
@@ -369,11 +422,9 @@ const handleSearch = async (e: React.FormEvent) => {
                   e.preventDefault();
                   setTicker(stock.symbol);
                   setShowDropdown(false);
-                  // Wait for state to update, then trigger search:
                   setTimeout(() => {
-                    // Creates fake event for handleSearch:
-                    handleSearch({ preventDefault: () => {} }as React.FormEvent);
-                  }, 0)
+                    handleSearch(null, stock.symbol);
+                  }, 0);
                 }}
               >
                 <span className="font-semibold">{stock.symbol}</span>
@@ -417,7 +468,50 @@ const handleSearch = async (e: React.FormEvent) => {
                   />
                 </div>
               )}
-              <p className="text-sm text-gray-700 dark:text-gray-300">{sentimentSummary}</p>
+              {/* Render parsed sentiment summary if possible */}
+              {(() => {
+                const parsed = parseSentimentSummary(sentimentSummary);
+                if (parsed) {
+                  return (
+                    <div className="mt-4 text-sm text-gray-700 dark:text-gray-300">
+                      <div className="font-semibold mb-1">{parsed.description}</div>
+                      {parsed.positive && parsed.positive.length > 0 && (
+                        <div className="mb-1">
+                          <span className="font-medium text-green-600">Positive:</span>
+                          <ul className="list-disc ml-6">
+                            {parsed.positive.map((item: string, idx: number) => (
+                              <li key={idx}>{item}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {parsed.neutral && parsed.neutral.length > 0 && (
+                        <div className="mb-1">
+                          <span className="font-medium text-gray-500">Neutral:</span>
+                          <ul className="list-disc ml-6">
+                            {parsed.neutral.map((item: string, idx: number) => (
+                              <li key={idx}>{item}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {parsed.negative && parsed.negative.length > 0 && (
+                        <div className="mb-1">
+                          <span className="font-medium text-red-600">Negative:</span>
+                          <ul className="list-disc ml-6">
+                            {parsed.negative.map((item: string, idx: number) => (
+                              <li key={idx}>{item}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  );
+                } else {
+                  // fallback to raw string if not JSON
+                  return <p className="text-sm text-gray-700 dark:text-gray-300">{sentimentSummary}</p>;
+                }
+              })()}
             </>
           )}
           {!loading && !sentimentSummary && (
