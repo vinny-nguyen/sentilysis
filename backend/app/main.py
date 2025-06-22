@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 import os
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -5,11 +6,33 @@ from fastapi.responses import JSONResponse
 import logging
 import time
 
+from .database import close_mongo_connection, connect_to_mongo
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Manage application lifespan events"""
+    # Startup
+    logger.info("Starting Sentilytics Backend...")
+    try:
+        await connect_to_mongo()
+        logger.info("Successfully connected to MongoDB")
+    except Exception as e:
+        logger.error(f"Failed to connect to MongoDB: {e}")
+        raise e
+
+    yield
+
+    # Shutdown
+    logger.info("Shutting down Sentilytics Backend...")
+    await close_mongo_connection()
+    logger.info("MongoDB connection closed")
 
 
 # Get CORS origins from environment
@@ -30,6 +53,7 @@ app = FastAPI(
     description="A basic API for Sentilytics with AI capabilities",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 # Add CORS middleware
@@ -60,9 +84,10 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 
 # Include routers
-from .api.routes import ai
+from .api.routes import ai, overview
 
 app.include_router(ai.router)
+app.include_router(overview.router)
 
 
 # Root endpoint
@@ -75,6 +100,7 @@ async def root():
         "status": "running",
         "docs": "/docs",
         "ai_endpoints": "/ai",
+        "overview_endpoints": "/overview",
     }
 
 
@@ -89,14 +115,25 @@ async def health_check():
     }
 
 
-# Example endpoint
-@app.get("/api/example")
-async def example_endpoint():
-    """Example endpoint for testing"""
-    return {
-        "message": "This is an example endpoint",
-        "data": {"items": ["item1", "item2", "item3"], "count": 3},
-    }
+@app.get("/test-db")
+async def test_database():
+    """Test database connection"""
+    try:
+        # Import here to avoid circular import issues
+        from .test_scripts.test_service import TestService
+        from .test_scripts.overview_example import (
+            example_overview_operations,
+            example_usage_in_app,
+        )
+
+        test_service = TestService()
+        result = await test_service.test_connection()
+        await example_overview_operations()
+        await example_usage_in_app()
+        return result
+    except Exception as e:
+        logger.error(f"Database test failed: {e}")
+        return {"status": "error", "message": str(e)}
 
 
 if __name__ == "__main__":
