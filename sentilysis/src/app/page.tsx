@@ -17,6 +17,30 @@ import dynamic from "next/dynamic";
 const World = dynamic(() => import("../components/globe").then(m => m.World), {ssr: false});
 const tickers = [];
 
+// List of 20 stock tickers:
+const STOCKS = [
+  { symbol: "AAPL", name: "Apple Inc." },
+  { symbol: "TSLA", name: "Tesla Inc." },
+  { symbol: "GOOG", name: "Alphabet Inc." },
+  { symbol: "MSFT", name: "Microsoft Corp." },
+  { symbol: "AMZN", name: "Amazon.com Inc." },
+  { symbol: "NVDA", name: "NVIDIA Corp." },
+  { symbol: "META", name: "Meta Platforms Inc." },
+  { symbol: "NFLX", name: "Netflix Inc." },
+  { symbol: "AMD", name: "Advanced Micro Devices" },
+  { symbol: "INTC", name: "Intel Corp." },
+  { symbol: "BABA", name: "Alibaba Group" },
+  { symbol: "DIS", name: "Walt Disney Co." },
+  { symbol: "V", name: "Visa Inc." },
+  { symbol: "JPM", name: "JPMorgan Chase" },
+  { symbol: "BAC", name: "Bank of America" },
+  { symbol: "WMT", name: "Walmart Inc." },
+  { symbol: "PYPL", name: "PayPal Holdings" },
+  { symbol: "ADBE", name: "Adobe Inc." },
+  { symbol: "CRM", name: "Salesforce Inc." },
+  { symbol: "ORCL", name: "Oracle Corp." },
+];
+
 interface StockData {
   symbol: string;
   shortName: string;
@@ -83,6 +107,8 @@ export default function Home() {
   ]);
   const [sentimentSummary, setSentimentSummary] = useState<string | null>(null);
   const [sentimentStats, setSentimentStats] = useState<{positive: number, neutral: number, negative: number, total: number}>({positive: 0, neutral: 0, negative: 0, total: 0});
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [filteredStocks, setFilteredStocks] = useState(STOCKS);
 
   const globeConfig = {
     pointSize: 4,
@@ -304,20 +330,63 @@ const handleSearch = async (e: React.FormEvent) => {
       {/* Search Bar */}
       <form
         onSubmit={handleSearch}
-        className="w-full max-w-3xl flex items-center gap-3 mb-6"
+        className="w-full max-w-3xl flex flex-col gap-1 mb-6 relative"
+        autoComplete="off"
       >
         <input
           type="text"
           placeholder="Enter stock ticker (e.g., TSLA, AAPL)"
           value={ticker}
-          onChange={(e) => setTicker(e.target.value.toUpperCase())}
+          onChange={(e) => {
+            const val = e.target.value.toUpperCase();
+            setTicker(val);
+            if (val.length === 0) {
+              setShowDropdown(false);
+              setFilteredStocks(STOCKS);
+            } else {
+              const filtered = STOCKS.filter(
+                (s) =>
+                  s.symbol.startsWith(val) ||
+                  s.name.toUpperCase().startsWith(val)
+              );
+              setFilteredStocks(filtered);
+              setShowDropdown(filtered.length > 0);
+            }
+          }}
+          onFocus={() => setShowDropdown(ticker.length > 0 && filteredStocks.length > 0)}
+          onBlur={() => setTimeout(() => setShowDropdown(false), 100)} // delay to allow click
           className="flex-1 px-4 py-2 rounded-lg border border-gray-300 bg-white dark:bg-gray-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
+        {showDropdown && (
+          <div className="absolute top-full left-0 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-b-lg shadow z-10 max-h-56 overflow-y-auto">
+            {filteredStocks.map((stock) => (
+              <div
+                key={stock.symbol}
+                role="button"
+                tabIndex={0}
+                className="px-4 py-2 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900"
+                onMouseDown={async (e) => {
+                  e.preventDefault();
+                  setTicker(stock.symbol);
+                  setShowDropdown(false);
+                  // Wait for state to update, then trigger search:
+                  setTimeout(() => {
+                    // Creates fake event for handleSearch:
+                    handleSearch({ preventDefault: () => {} }as React.FormEvent);
+                  }, 0)
+                }}
+              >
+                <span className="font-semibold">{stock.symbol}</span>
+                <span className="ml-2 text-gray-500">{stock.name}</span>
+              </div>
+            ))}
+          </div>
+        )}
         <button
           type="submit"
-          className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition shadow-sm"
+          className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition shadow-sm mt-2"
         >
-          Search
+          Search 🔍
         </button>
       </form>
 
@@ -398,9 +467,11 @@ const handleSearch = async (e: React.FormEvent) => {
         {/* To do: Make chatbot assistant scrollable instead of expanding + Make search bar support 20 tickers */}
 
         {/* Chatbot Assistant */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow p-5 flex flex-col">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow p-5 flex flex-col h-full min-h-[340px]">
           <h2 className="text-lg font-semibold mb-3">🤖 Chatbot Assistant</h2>
-          <div className="flex-1 overflow-y-auto mb-3 border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-gray-50 dark:bg-gray-900/40 space-y-2 text-sm">
+          <div 
+            className="mb-3 border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-gray-50 dark:bg-gray-900/40 space-y-2 text-sm flex-1 min-h-0 overflow-y-auto"
+          >
             {chatHistory.map((msg, i) => (
               <div
                 key={i}
