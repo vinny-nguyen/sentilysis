@@ -38,8 +38,6 @@ python -m app.main
 ### AI Endpoints (Gemini)
 - `POST /ai/generate` - Generate text using Gemini AI
 - `POST /ai/analyze` - Analyze text using Gemini AI
-- `POST /ai/chat` - Chat with Gemini AI
-- `POST /ai/insights` - Generate insights about a topic
 - `GET /ai/status` - Check Gemini service status
 - `GET /ai/health` - AI service health check
 
