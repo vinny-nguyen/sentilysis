@@ -15,6 +15,7 @@ import {
 import dynamic from "next/dynamic";
 
 const World = dynamic(() => import("../components/globe").then(m => m.World), {ssr: false});
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 interface StockData {
   symbol: string;
@@ -178,7 +179,7 @@ export default function Home() {
       };
 
 async function fetchSentimentRecords(ticker: string) {
-  const res = await fetch(`http://localhost:8000/overview/ticker/${ticker}`, {
+  const res = await fetch(`${API_BASE_URL}/overview/ticker/${ticker}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ limit: 100, skip: 0 }),
@@ -212,7 +213,7 @@ async function getSentimentSummary(ticker: string) {
   const text = recordsToText(records);
 
   // Step 3: Send to AI for analysis
-  const aiRes = await fetch("http://localhost:8000/ai/analyze", {
+  const aiRes = await fetch(`${API_BASE_URL}/ai/analyze`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ text: text, max_tokens: 200 }),
