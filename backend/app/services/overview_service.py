@@ -82,9 +82,9 @@ class OverviewService:
             # Convert date string to datetime if needed
             if isinstance(record_data["date"], str):
                 try:
-                    record_data["date"] = datetime.strptime(
-                        record_data["date"], "%Y-%m-%d"
-                    ).date()
+                    record_data["date"] = str(
+                        datetime.strptime(record_data["date"], "%Y-%m-%d").date()
+                    )
                 except ValueError:
                     raise ValueError("Invalid date format. Use YYYY-MM-DD")
 
@@ -168,9 +168,9 @@ class OverviewService:
         try:
             # Convert string dates to date objects
             if isinstance(start_date, str):
-                start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+                start_date = str(datetime.strptime(start_date, "%Y-%m-%d").date())
             if isinstance(end_date, str):
-                end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+                end_date = str(datetime.strptime(end_date, "%Y-%m-%d").date())
 
             # Build filter
             filter_dict: Dict[str, Any] = {
@@ -254,9 +254,9 @@ class OverviewService:
         try:
             # Convert string dates to date objects
             if isinstance(start_date, str):
-                start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+                start_date = str(datetime.strptime(start_date, "%Y-%m-%d").date())
             if isinstance(end_date, str):
-                end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+                end_date = str(datetime.strptime(end_date, "%Y-%m-%d").date())
 
             filter_dict = {"date": {"$gte": start_date, "$lte": end_date}}
 

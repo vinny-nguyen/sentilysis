@@ -7,8 +7,6 @@ import logging
 import time
 
 from .database import close_mongo_connection, connect_to_mongo
-from .test_scripts.test_service import TestService
-from .test_scripts.overview_example import example_overview_operations
 
 # Configure logging
 logging.basicConfig(
@@ -121,9 +119,11 @@ async def test_database():
     try:
         # Import here to avoid circular import issues
         from .test_scripts.test_service import TestService
+        from .test_scripts.overview_example import example_overview_operations
 
         test_service = TestService()
         result = await test_service.test_connection()
+        await example_overview_operations()
         return result
     except Exception as e:
         logger.error(f"Database test failed: {e}")
