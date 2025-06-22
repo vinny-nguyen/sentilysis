@@ -125,10 +125,10 @@ export default function Home() {
       if (res.ok) {
         setStockData(data);
       } else {
-        setError(data.error || "Failed to fetch stock data");
+        setError(data.error || "Failed to fetch stock data. Please try again ☹️.");
       }
     } catch {
-      setError("Failed to fetch stock data");
+      setError("Failed to fetch stock data. Please try again ☹️.");
     } finally {
       setLoading(false);
     }
