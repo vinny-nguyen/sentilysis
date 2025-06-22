@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 import os
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -5,11 +6,34 @@ from fastapi.responses import JSONResponse
 import logging
 import time
 
+from .database import close_mongo_connection, connect_to_mongo
+from .services.test_service import TestService
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Manage application lifespan events"""
+    # Startup
+    logger.info("Starting Sentilytics Backend...")
+    try:
+        await connect_to_mongo()
+        logger.info("Successfully connected to MongoDB")
+    except Exception as e:
+        logger.error(f"Failed to connect to MongoDB: {e}")
+        raise e
+
+    yield
+
+    # Shutdown
+    logger.info("Shutting down Sentilytics Backend...")
+    await close_mongo_connection()
+    logger.info("MongoDB connection closed")
 
 
 # Get CORS origins from environment
@@ -30,6 +54,7 @@ app = FastAPI(
     description="A basic API for Sentilytics with AI capabilities",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 # Add CORS middleware
@@ -89,14 +114,12 @@ async def health_check():
     }
 
 
-# Example endpoint
-@app.get("/api/example")
-async def example_endpoint():
-    """Example endpoint for testing"""
-    return {
-        "message": "This is an example endpoint",
-        "data": {"items": ["item1", "item2", "item3"], "count": 3},
-    }
+@app.get("/test-db")
+async def test_database():
+    """Test database connection"""
+    await connect_to_mongo()
+    test_service = TestService()
+    return await test_service.test_connection()
 
 
 if __name__ == "__main__":
