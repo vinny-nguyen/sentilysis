@@ -32,18 +32,17 @@ Return a JSON object with a single key “reports” whose value is an array of 
 EXAMPLE OUTPUT:
 ```json
 {
-  "reports": [
-    {
-      "post_id": "primary_id",
-      "date": "2025-06-20",
-      "ticker": "AAPL",
-      "title": "Is AAPL about to jump after earnings?",
-      "summary": "User argues that strong iPhone sales figures leaked ahead of Q2 earnings could push the stock above $190.",
-      "source_link": "linkMclinkface",
-      "type": "reddit or google",
-      "sentiment": "postive/neutural/negative",
-      "sentiment_score": 0.0001 
-    },
-  ]
+  "post_id": "string",
+  "date": "2025-06-20",
+  "ticker": "string",
+  "title": "string",
+  "sentiment": {
+    "summary": "string",
+    "view": "positive|neutral|negative",
+    "tone": "string"
+  },
+  "source_link": "string",
+  "type": "reddit|google",
+  "sentiment_score": 0.0001
 }
 ```

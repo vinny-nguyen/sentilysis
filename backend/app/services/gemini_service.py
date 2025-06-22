@@ -11,6 +11,24 @@ logger = logging.getLogger(__name__)
 gemini_model = "gemini-1.5-flash"
 
 
+def getSummarizePrompt(prompt: str):
+    return f"""
+You are an AI assistant that analyzes a Reddit post about a stock ticker and returns a structured summary.
+Preserve the original message, the view of the stock (positive, negative, neutral), and the tone/emotion.
+Retain the original message and information conveyed. Don't miss out on any insights, and any "whys". 
+
+Post:
+{prompt}
+
+Return in JSON format like:
+{{
+    "summary": "short and clear summary of the post",
+    "view": "positive, negative, or neutral",
+    "tone": "emotional tone (e.g. optimistic, fearful, excited)"
+}}
+"""
+
+
 class GeminiService:
     def __init__(self):
         self.api_key = os.getenv("GEMINI_API_KEY")
@@ -24,12 +42,14 @@ class GeminiService:
 
     async def summarize_text(self, prompt: str, max_tokens: int = 200) -> str:
         """Generate text using Gemini AI"""
+
         try:
             if not self.client:
                 return "Gemini API key not configured"
 
             response = self.client.generate_content(
-                prompt, generation_config={"max_output_tokens": max_tokens}
+                getSummarizePrompt(prompt),
+                generation_config={"max_output_tokens": max_tokens},
             )
 
             return response.text
