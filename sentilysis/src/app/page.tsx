@@ -1,5 +1,6 @@
 "use client";
 // import { cn } from "../lib/utils";
+
 import { useState, useMemo } from "react";
 import { Line } from "react-chartjs-2";
 import {
@@ -17,6 +18,7 @@ import React from "react";
 
 const World = dynamic(() => import("../components/globe").then(m => m.World), {ssr: false});
 const tickers = [];
+
 
 // List of 20 stock tickers:
 const STOCKS = [
@@ -303,16 +305,52 @@ const handleSearch = async (e: React.FormEvent) => {
 };
 
 
-  const handleChat = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!chatInput.trim()) return;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+
+const handleChat = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!chatInput.trim()) return;
+
+  const userMessage = chatInput;
+  setChatHistory((prev) => [...prev, { sender: "user", text: userMessage }]);
+  setChatInput("");
+
+  if (!GEMINI_API_KEY) {
     setChatHistory((prev) => [
       ...prev,
-      { sender: "user", text: chatInput },
-      { sender: "bot", text: "(Mock) Here's a smart answer about: " + chatInput },
+      { sender: "bot", text: "Error: Gemini API key is not set. Please set NEXT_PUBLIC_GEMINI_API_KEY in your .env.local file." },
     ]);
-    setChatInput("");
-  };
+    return;
+  }
+
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: `You are a chatbot on a sentiment analysis web app. The user will query you information related to ${ticker}. Answer in less than 100 words and give a neurtal, grounded, professional answer. User Query:  ${userMessage}`
+          }] }],
+        }),
+      }
+    );
+
+    const data = await res.json();
+    const botReply = data?.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, no response.";
+
+    setChatHistory((prev) => [...prev, { sender: "bot", text: botReply }]);
+  } catch (err) {
+    console.error("Error calling Gemini API:", err);
+    setChatHistory((prev) => [
+      ...prev,
+      { sender: "bot", text: "Error fetching response from Gemini." },
+    ]);
+  }
+};
+
 
   // Helper to parse sentiment summary JSON (even if wrapped in code block)
   function parseSentimentSummary(summary: string | null) {
