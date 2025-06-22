@@ -7,6 +7,7 @@ import logging
 import time
 
 from .database import close_mongo_connection, connect_to_mongo
+from .services.scheduler_services import scheduler_service
 
 # Configure logging
 logging.basicConfig(
@@ -27,10 +28,14 @@ async def lifespan(app: FastAPI):
         logger.error(f"Failed to connect to MongoDB: {e}")
         raise e
 
+    scheduler_service.start()
+    scheduler_service.add_interval_job(lambda: print("hello"), "thing", seconds=5)
+
     yield
 
     # Shutdown
     logger.info("Shutting down Sentilytics Backend...")
+    scheduler_service.shutdown()
     await close_mongo_connection()
     logger.info("MongoDB connection closed")
 
