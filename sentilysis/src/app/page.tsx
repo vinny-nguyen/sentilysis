@@ -209,6 +209,14 @@ async function getSentimentSummary(ticker: string) {
     else if (s.view === "negative") negative++;
   }
 
+  // Collect titles + source links
+  const sourceLinks = records
+    .filter((r: { title: string; source_link: string }) => r.title && r.source_link)
+    .map((r: { title: string; source_link: string }) => ({
+      title: r.title,
+      url: r.source_link
+    }));
+
   // Aggregate records into a single text string
   const text = recordsToText(records);
 
@@ -230,9 +238,11 @@ async function getSentimentSummary(ticker: string) {
       negative,
       total: records.length,
     },
+    sourceLinks,
   };
 }
 
+const [sourceLinks, setSourceLinks] = useState<{ title: string; url: string }[]>([]);
 
 const handleSearch = async (e: React.FormEvent) => {
   e.preventDefault();
@@ -253,9 +263,10 @@ const handleSearch = async (e: React.FormEvent) => {
     }
 
     // Get both sentiment summary + stats in one go
-    const { summaryHTML, stats } = await getSentimentSummary(ticker);
+    const { summaryHTML, stats, sourceLinks } = await getSentimentSummary(ticker);
     setSentimentStats(stats);
     setSentimentSummary(summaryHTML);
+    setSourceLinks(sourceLinks);
 
   } catch {
     setError("Failed to fetch stock data or sentiment ☹️.");
@@ -317,7 +328,6 @@ const handleSearch = async (e: React.FormEvent) => {
           {loading && <SentimentAnalysisSkeleton />}
           {!loading && sentimentSummary && (
             <>
-              <p className="text-sm text-gray-700 dark:text-gray-300">{sentimentSummary}</p>
               {sentimentStats.total > 0 && (
                 <div className="flex gap-6 mt-4 justify-center">
                   <Stat
@@ -337,6 +347,7 @@ const handleSearch = async (e: React.FormEvent) => {
                   />
                 </div>
               )}
+              <p className="text-sm text-gray-700 dark:text-gray-300">{sentimentSummary}</p>
             </>
           )}
           {!loading && !sentimentSummary && (
@@ -437,14 +448,19 @@ const handleSearch = async (e: React.FormEvent) => {
     </p>
   </div>
 
-  <div className="mt-4">
-    <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-2">🔗 References</h3>
-    <ul className="list-disc ml-5 space-y-1 text-sm text-blue-700 dark:text-blue-400">
-      <li><a href="#" target="_blank" rel="noopener noreferrer">AAPL Supply Chain Report – Source</a></li>
-      <li><a href="#" target="_blank" rel="noopener noreferrer">Federal Reserve Interest Rate News – Source</a></li>
-      <li><a href="#" target="_blank" rel="noopener noreferrer">US-China Trade Tensions Coverage – Source</a></li>
-    </ul>
-  </div>
+<div className="mt-4">
+  <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-2">🔗 References</h3>
+  <ul className="list-disc ml-5 space-y-1 text-sm text-blue-700 dark:text-blue-400">
+    {sourceLinks.map((link, index) => (
+      <li key={index}>
+        <a href={link.url} target="_blank" rel="noopener noreferrer">
+          {link.title}
+        </a>
+      </li>
+    ))}
+  </ul>
+</div>
+
   </div>
   </div>
   </div>
