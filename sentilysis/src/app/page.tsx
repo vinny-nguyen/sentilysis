@@ -29,6 +29,48 @@ interface StockData {
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
+// SentimentAnalysisSkeleton:
+function SentimentAnalysisSkeleton() {
+  return (
+    <div
+      role="status"
+      className="w-full p-4 border border-gray-200 rounded-2xl shadow animate-pulse md:p-6 dark:border-gray-700 bg-white dark:bg-gray-800"
+    >
+      <div className="h-4 bg-gray-200 rounded-full dark:bg-gray-700 w-40 mb-4"></div>
+      <div className="w-60 h-3 mb-6 bg-gray-200 rounded-full dark:bg-gray-700"></div>
+      <div className="flex items-baseline gap-2 mt-4">
+        <div className="w-10 bg-gray-200 rounded-t-lg h-24 dark:bg-gray-700"></div>
+        <div className="w-10 h-20 bg-gray-200 rounded-t-lg dark:bg-gray-700"></div>
+        <div className="w-10 bg-gray-200 rounded-t-lg h-28 dark:bg-gray-700"></div>
+        <div className="w-10 h-24 bg-gray-200 rounded-t-lg dark:bg-gray-700"></div>
+        <div className="w-10 bg-gray-200 rounded-t-lg h-32 dark:bg-gray-700"></div>
+        <div className="w-10 bg-gray-200 rounded-t-lg h-28 dark:bg-gray-700"></div>
+        <div className="w-10 bg-gray-200 rounded-t-lg h-32 dark:bg-gray-700"></div>
+      </div>
+      <span className="sr-only">Loading...</span>
+    </div>
+  );
+}
+
+// GlobalEventsSkeleton
+function GlobalEventsSkeleton() {
+  return (
+    <div
+      role="status"
+      className="space-y-2.5 animate-pulse max-w-2xl w-full bg-white dark:bg-gray-800 rounded-2xl shadow p-6"
+    >
+      {[...Array(6)].map((_, i) => (
+        <div key={i} className="flex items-center w-full gap-2">
+          <div className="h-2.5 bg-gray-200 rounded-full dark:bg-gray-700 w-32"></div>
+          <div className="h-2.5 bg-gray-300 rounded-full dark:bg-gray-600 w-24"></div>
+          <div className="h-2.5 bg-gray-300 rounded-full dark:bg-gray-600 flex-1"></div>
+        </div>
+      ))}
+      <span className="sr-only">Loading...</span>
+    </div>
+  );
+}
+
 export default function Home() {
   const [ticker, setTicker] = useState("");
   const [stockData, setStockData] = useState<StockData | null >(null);
@@ -125,10 +167,10 @@ export default function Home() {
       if (res.ok) {
         setStockData(data);
       } else {
-        setError(data.error || "Failed to fetch stock data. Please try again ☹️.");
+        setError(data.error || "Failed to fetch stock data ☹️.");
       }
     } catch {
-      setError("Failed to fetch stock data. Please try again ☹️.");
+      setError("Failed to fetch stock data ☹️.");
     } finally {
       setLoading(false);
     }
