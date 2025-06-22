@@ -16,6 +16,7 @@ import dynamic from "next/dynamic";
 
 const World = dynamic(() => import("../components/globe").then(m => m.World), {ssr: false});
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+const tickers = [];
 
 interface StockData {
   symbol: string;
@@ -123,7 +124,7 @@ export default function Home() {
   >
     <World globeConfig={globeConfig} data={[]} />
   </div>
-), []);
+ ), []);
 
 
   const sentiment = { positive: 60, neutral: 25, negative: 15 };
@@ -289,6 +290,7 @@ const handleSearch = async (e: React.FormEvent) => {
       {/* Globe Background */}
       {memoizedGlobe}
       <div className="relative z-0 w-full flex flex-col items-center">
+
       {/* Search Bar */}
       <form
         onSubmit={handleSearch}
@@ -382,6 +384,8 @@ const handleSearch = async (e: React.FormEvent) => {
             </div>
           )}
         </div>
+
+        {/* To do: Make chatbot assistant scrollable instead of expanding + Make search bar support 20 tickers */}
 
         {/* Chatbot Assistant */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow p-5 flex flex-col">
