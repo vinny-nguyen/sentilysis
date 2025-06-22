@@ -80,6 +80,8 @@ export default function Home() {
   const [chatHistory, setChatHistory] = useState([
     { sender: "bot", text: "Hi! Ask me about any stock or market event." },
   ]);
+  const [sentimentSummary, setSentimentSummary] = useState<string | null>(null);
+  const [sentimentStats, setSentimentStats] = useState<{positive: number, neutral: number, negative: number, total: number}>({positive: 0, neutral: 0, negative: 0, total: 0});
 
   const globeConfig = {
     pointSize: 4,
@@ -175,8 +177,6 @@ export default function Home() {
         ],
       };
 
-const [sentimentSummary, setSentimentSummary] = useState<string | null>(null);
-
 async function fetchSentimentRecords(ticker: string) {
   const res = await fetch(`http://localhost:8000/overview/ticker/${ticker}`, {
     method: "POST",
@@ -196,10 +196,19 @@ function recordsToText(records: any[]) {
 }
 
 async function getSentimentSummary(ticker: string) {
-  // Step 1: Fetch records from DB
+  // Fetch records from DB
   const records = await fetchSentimentRecords(ticker);
 
-  // Step 2: Aggregate records into a single text string
+  // Count sentiment types
+  let positive = 0, neutral = 0, negative = 0;
+  for (const r of records) {
+    const s = r.sentiment?.label || r.sentiment?.type || r.sentiment;
+    if (s.view === "positive") positive++;
+    else if (s.view === "neutral") neutral++;
+    else if (s.view === "negative") negative++;
+  }
+
+  // Aggregate records into a single text string
   const text = recordsToText(records);
 
   // Step 3: Send to AI for analysis
@@ -209,8 +218,20 @@ async function getSentimentSummary(ticker: string) {
     body: JSON.stringify({ text: text, max_tokens: 200 }),
   });
   if (!aiRes.ok) throw new Error("Failed to get sentiment summary");
-  return aiRes.json();
+
+  const sentimentHTML = (await aiRes.json()).analysis;
+
+  return {
+    summaryHTML: sentimentHTML,
+    stats: {
+      positive,
+      neutral,
+      negative,
+      total: records.length,
+    },
+  };
 }
+
 
 const handleSearch = async (e: React.FormEvent) => {
   e.preventDefault();
@@ -218,8 +239,10 @@ const handleSearch = async (e: React.FormEvent) => {
   setError("");
   setStockData(null);
   setSentimentSummary(null);
+  setSentimentStats({positive: 0, neutral: 0, negative: 0, total: 0});
+
   try {
-    // Fetch stock data as before
+    // Fetch stock data
     const res = await fetch(`/api/stock?ticker=${ticker}`);
     const data = await res.json();
     if (res.ok) {
@@ -228,15 +251,18 @@ const handleSearch = async (e: React.FormEvent) => {
       setError(data.error || "Failed to fetch stock data ☹️.");
     }
 
-    // Fetch sentiment summary from your backend
-    const sentimentRes = await getSentimentSummary(ticker);
-    setSentimentSummary(sentimentRes.analysis || sentimentRes.generated_text || "");
+    // Get both sentiment summary + stats in one go
+    const { summaryHTML, stats } = await getSentimentSummary(ticker);
+    setSentimentStats(stats);
+    setSentimentSummary(summaryHTML);
+
   } catch {
     setError("Failed to fetch stock data or sentiment ☹️.");
   } finally {
     setLoading(false);
   }
 };
+
 
   const handleChat = (e: React.FormEvent) => {
     e.preventDefault();
@@ -289,7 +315,28 @@ const handleSearch = async (e: React.FormEvent) => {
           <h2 className="text-xl font-bold">📊 Sentiment Analysis</h2>
           {loading && <SentimentAnalysisSkeleton />}
           {!loading && sentimentSummary && (
-            <p className="text-sm text-gray-700 dark:text-gray-300">{sentimentSummary}</p>
+            <>
+              <p className="text-sm text-gray-700 dark:text-gray-300">{sentimentSummary}</p>
+              {sentimentStats.total > 0 && (
+                <div className="flex gap-6 mt-4 justify-center">
+                  <Stat
+                    label="Positive"
+                    value={Math.round((sentimentStats.positive / sentimentStats.total) * 100)}
+                    color="green"
+                  />
+                  <Stat
+                    label="Neutral"
+                    value={Math.round((sentimentStats.neutral / sentimentStats.total) * 100)}
+                    color="gray"
+                  />
+                  <Stat
+                    label="Negative"
+                    value={Math.round((sentimentStats.negative / sentimentStats.total) * 100)}
+                    color="red"
+                  />
+                </div>
+              )}
+            </>
           )}
           {!loading && !sentimentSummary && (
             <div className="text-gray-400 text-sm">No sentiment data available.</div>
