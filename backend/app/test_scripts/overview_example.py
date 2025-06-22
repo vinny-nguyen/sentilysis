@@ -19,7 +19,7 @@ async def example_overview_operations():
     print("\n1. Creating a single overview record...")
 
     record_data = {
-        "post_id": "reddit_123456",
+        "post_id": "",
         "date": "2025-06-20",
         "ticker": "AAPL",
         "title": "Apple's new iPhone announcement",
@@ -43,7 +43,7 @@ async def example_overview_operations():
     print("\n2. Creating another record...")
 
     record_data_2 = {
-        "post_id": "google_789012",
+        "post_id": "",
         "date": "2025-06-20",
         "ticker": "TSLA",
         "title": "Tesla stock analysis",
