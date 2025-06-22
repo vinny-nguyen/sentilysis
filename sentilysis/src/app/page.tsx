@@ -135,8 +135,8 @@ export default function Home() {
       "Market volatility increases amid global tensions.",
     ],
   };
-  const sentimentSummary =
-    "Recent sentiment trends suggest a generally positive outlook for TSLA. Concerns linger around AAPL's supply chain and global market uncertainty.";
+  // const sentimentSummary =
+    // "Recent sentiment trends suggest a generally positive outlook for TSLA. Concerns linger around AAPL's supply chain and global market uncertainty.";
   // const macroLinks = [
   //   { text: "AAPL faces supply chain issues in China, causes investors to worry.", url: "#" },
   //   { text: "Fed signals possible rate hike pause, impacting tech stock sentiment.", url: "#" },
@@ -175,25 +175,68 @@ export default function Home() {
         ],
       };
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-    setStockData(null);
-    try {
-      const res = await fetch(`/api/stock?ticker=${ticker}`);
-      const data = await res.json();
-      if (res.ok) {
-        setStockData(data);
-      } else {
-        setError(data.error || "Failed to fetch stock data ☹️.");
-      }
-    } catch {
-      setError("Failed to fetch stock data ☹️.");
-    } finally {
-      setLoading(false);
+const [sentimentSummary, setSentimentSummary] = useState<string | null>(null);
+
+async function fetchSentimentRecords(ticker: string) {
+  const res = await fetch(`http://0.0.0.0:8000/overview/ticker/${ticker}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ limit: 100, skip: 0 }),
+  });
+  if (!res.ok) throw new Error("Failed to fetch sentiment records");
+  const data = await res.json();
+  return data.records; // Array of records
+}
+
+function recordsToText(records: any[]) {
+  // You can customize this aggregation as needed
+  return records.map(
+    (r: any) => `${r.title}: ${r.sentiment?.summary || ""}`
+  ).join("\n");
+}
+
+async function getSentimentSummary(ticker: string) {
+  // Step 1: Fetch records from DB
+  const records = await fetchSentimentRecords(ticker);
+
+  // Step 2: Aggregate records into a single text string
+  const text = recordsToText(records);
+
+  // Step 3: Send to AI for analysis
+  const aiRes = await fetch("http://0.0.0.0:8000/ai/analyze", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text: text, max_tokens: 200 }),
+  });
+  if (!aiRes.ok) throw new Error("Failed to get sentiment summary");
+  return aiRes.json();
+}
+
+const handleSearch = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
+  setError("");
+  setStockData(null);
+  setSentimentSummary(null);
+  try {
+    // Fetch stock data as before
+    const res = await fetch(`/api/stock?ticker=${ticker}`);
+    const data = await res.json();
+    if (res.ok) {
+      setStockData(data);
+    } else {
+      setError(data.error || "Failed to fetch stock data ☹️.");
     }
-  };
+
+    // Fetch sentiment summary from your backend
+    const sentimentRes = await getSentimentSummary(ticker);
+    setSentimentSummary(sentimentRes.analysis || sentimentRes.generated_text || "");
+  } catch {
+    setError("Failed to fetch stock data or sentiment ☹️.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleChat = (e: React.FormEvent) => {
     e.preventDefault();
@@ -244,34 +287,13 @@ export default function Home() {
         {/* Sentiment Analysis */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow p-5 flex flex-col gap-3">
           <h2 className="text-xl font-bold">📊 Sentiment Analysis</h2>
-          <div className="flex justify-around">
-            <Stat label="Positive" value={sentiment.positive} color="green" />
-            <Stat label="Neutral" value={sentiment.neutral} color="gray" />
-            <Stat label="Negative" value={sentiment.negative} color="red" />
-          </div>
-          <p className="text-sm text-gray-700 dark:text-gray-300">{sentimentSummary}</p>
-          <div className="text-sm space-y-2">
-            {["positive", "neutral", "negative"].map((category) => (
-              <div key={category}>
-                <h3
-                  className={`font-semibold ${
-                    category === "positive"
-                      ? "text-green-600 dark:text-green-400"
-                      : category === "neutral"
-                      ? "text-gray-600 dark:text-gray-300"
-                      : "text-red-600 dark:text-red-400"
-                  }`}
-                >
-                  {category.charAt(0).toUpperCase() + category.slice(1)}
-                </h3>
-                <ul className="list-disc ml-5">
-                  {headlines[category as keyof typeof headlines].map((h, i) => (
-                    <li key={i} className="text-gray-800 dark:text-gray-200">{h}</li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
+          {loading && <SentimentAnalysisSkeleton />}
+          {!loading && sentimentSummary && (
+            <p className="text-sm text-gray-700 dark:text-gray-300">{sentimentSummary}</p>
+          )}
+          {!loading && !sentimentSummary && (
+            <div className="text-gray-400 text-sm">No sentiment data available.</div>
+          )}
         </div>
 
         {/* Stock Chart */}
