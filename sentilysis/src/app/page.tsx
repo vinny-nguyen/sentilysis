@@ -13,6 +13,7 @@ import {
   Legend,
 } from "chart.js";
 import dynamic from "next/dynamic";
+import React from "react";
 
 const World = dynamic(() => import("../components/globe").then(m => m.World), {ssr: false});
 const tickers = [];
@@ -313,6 +314,21 @@ const handleSearch = async (e: React.FormEvent) => {
     setChatInput("");
   };
 
+  // Helper to parse sentiment summary JSON (even if wrapped in code block)
+  function parseSentimentSummary(summary: string | null) {
+    if (!summary) return null;
+    let clean = summary.trim();
+    // Remove code block markers and 'json' if present
+    if (clean.startsWith('```')) {
+      clean = clean.replace(/^```json|^```/i, '').replace(/```$/, '').trim();
+    }
+    try {
+      return JSON.parse(clean);
+    } catch {
+      return null;
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 px-4 py-6 flex flex-col items-center">
       {/* Header */}
@@ -417,7 +433,50 @@ const handleSearch = async (e: React.FormEvent) => {
                   />
                 </div>
               )}
-              <p className="text-sm text-gray-700 dark:text-gray-300">{sentimentSummary}</p>
+              {/* Render parsed sentiment summary if possible */}
+              {(() => {
+                const parsed = parseSentimentSummary(sentimentSummary);
+                if (parsed) {
+                  return (
+                    <div className="mt-4 text-sm text-gray-700 dark:text-gray-300">
+                      <div className="font-semibold mb-1">{parsed.description}</div>
+                      {parsed.positive && parsed.positive.length > 0 && (
+                        <div className="mb-1">
+                          <span className="font-medium text-green-600">Positive:</span>
+                          <ul className="list-disc ml-6">
+                            {parsed.positive.map((item: string, idx: number) => (
+                              <li key={idx}>{item}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {parsed.neutral && parsed.neutral.length > 0 && (
+                        <div className="mb-1">
+                          <span className="font-medium text-gray-500">Neutral:</span>
+                          <ul className="list-disc ml-6">
+                            {parsed.neutral.map((item: string, idx: number) => (
+                              <li key={idx}>{item}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {parsed.negative && parsed.negative.length > 0 && (
+                        <div className="mb-1">
+                          <span className="font-medium text-red-600">Negative:</span>
+                          <ul className="list-disc ml-6">
+                            {parsed.negative.map((item: string, idx: number) => (
+                              <li key={idx}>{item}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  );
+                } else {
+                  // fallback to raw string if not JSON
+                  return <p className="text-sm text-gray-700 dark:text-gray-300">{sentimentSummary}</p>;
+                }
+              })()}
             </>
           )}
           {!loading && !sentimentSummary && (
